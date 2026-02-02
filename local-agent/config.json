@@ -1,0 +1,9 @@
+{
+    "apiBaseUrl": "http://localhost:3000/api",
+    "dropboxRoot": "/Users/apple/Dropbox/TEMPLATES",
+    "pollIntervalMs": 10000,
+    "adobe": {
+        "photoshopApp": "Adobe Photoshop 2024",
+        "illustratorApp": "Adobe Illustrator 2024"
+    }
+}
