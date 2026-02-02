@@ -11,7 +11,7 @@ export default function Home() {
               <span className="text-white font-bold text-lg">A</span>
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-              AutoDesign Cloud
+              AutoDesign Cloud v3.2 (Live)
             </span>
           </div>
           <div className="flex items-center space-x-6">
