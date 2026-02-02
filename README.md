@@ -1,32 +1,25 @@
 # AutoDesign & Print Manager v3.2
 
-## 🚀 Cloud PWA (Operator Dashboard)
-This repository contains the Next.js Web Application in the root directory.
+This repository uses a **Monorepo Structure**.
 
-**Deploy to Vercel:**
-- Simply import this repository.
-- Vercel will automatically detect the Next.js app in the root.
-- **No special configuration needed.**
+## 📂 Project Structure
 
-## 📂 Other Components
-
+- **`/cloud-pwa`**: Next.js Web Application (Operator Dashboard).
+  - **Vercel Deployment**: Root Directory must be set to `cloud-pwa`.
 - **`/wp-connector`**: WordPress Plugin.
-  - Upload this folder (or zip) to your WordPress `wp-content/plugins` directory.
-- **`/local-agent`**: Node.js Service.
-  - Runs locally on your print server (Mac).
-  - See `local-agent/README.md` (if available) or `walkthrough.md`.
+- **`/local-agent`**: Node.js Service (Local Print Server).
+
+## 🚀 Deployment Fix
+
+If you are deploying to Vercel:
+- This project is located in the `cloud-pwa` folder.
+- Vercel should automatically detect this, or you can set **Root Directory** to `cloud-pwa`.
 
 ## Development
 
 ### Cloud PWA
 ```bash
+cd cloud-pwa
 npm install
 npm run dev
-```
-
-### Local Agent
-```bash
-cd local-agent
-npm install
-node index.js
 ```
