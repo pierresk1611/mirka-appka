@@ -1,32 +1,25 @@
 # AutoDesign & Print Manager v3.2
 
-This is a monorepo containing the three core components of the AutoDesign system.
+## 🚀 Cloud PWA (Operator Dashboard)
+This repository contains the Next.js Web Application in the root directory.
 
-## Project Structure
+**Deploy to Vercel:**
+- Simply import this repository.
+- Vercel will automatically detect the Next.js app in the root.
+- **No special configuration needed.**
 
-- **`/cloud-pwa`**: Next.js Web Application (Operator Dashboard).
-  - *Deploy to Vercel.*
+## 📂 Other Components
+
 - **`/wp-connector`**: WordPress Plugin.
-  - *Upload to WordPress (`wp-content/plugins`).*
+  - Upload this folder (or zip) to your WordPress `wp-content/plugins` directory.
 - **`/local-agent`**: Node.js Service.
-  - *Run locally on the print server (Mac).*
+  - Runs locally on your print server (Mac).
+  - See `local-agent/README.md` (if available) or `walkthrough.md`.
 
-## 🚀 How to Deploy on Vercel
-
-Since this is a monorepo, you must configure Vercel to look in the correct folder:
-
-1. Import this repository to Vercel.
-2. In **Project Settings** > **General**:
-   - Change **Root Directory** to: `cloud-pwa`
-3. In **Environment Variables**:
-   - Add default `OPENAI_API_KEY` (see `cloud-pwa/.env.example`).
-4. Click **Deploy**.
-
-## Local Development
+## Development
 
 ### Cloud PWA
 ```bash
-cd cloud-pwa
 npm install
 npm run dev
 ```
