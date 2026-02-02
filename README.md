@@ -1,25 +1,21 @@
-# AutoDesign & Print Manager v3.2
+# AutoDesign Cloud (v3.2)
 
-This repository uses a **Monorepo Structure**.
+This repository contains the AutoDesign Operator Dashboard (Next.js PWA).
 
-## 📂 Project Structure
+## 🚀 Deployment
 
-- **`/cloud-pwa`**: Next.js Web Application (Operator Dashboard).
-  - **Vercel Deployment**: Root Directory must be set to `cloud-pwa`.
-- **`/wp-connector`**: WordPress Plugin.
-- **`/local-agent`**: Node.js Service (Local Print Server).
+**This project is ready for Vercel.**
+- **Root Directory**: `.` (Default / Project Root).
+- No special configuration required.
 
-## 🚀 Deployment Fix
+## 📂 Backend Components
 
-If you are deploying to Vercel:
-- This project is located in the `cloud-pwa` folder.
-- Vercel should automatically detect this, or you can set **Root Directory** to `cloud-pwa`.
+The backend code is also included in this repository for reference:
+- `wp-connector/`: WordPress Plugin.
+- `local-agent/`: Local Node.js Service.
 
 ## Development
-
-### Cloud PWA
 ```bash
-cd cloud-pwa
 npm install
 npm run dev
 ```
