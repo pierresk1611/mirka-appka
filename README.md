@@ -1,21 +1,15 @@
 # AutoDesign Cloud (v3.2)
 
-This repository contains the AutoDesign Operator Dashboard (Next.js PWA).
+## ⚠️ Deployment Note
 
-## 🚀 Deployment
+This repository uses a `vercel.json` configuration to automatically deploy the application located in `cloud-pwa`.
 
-**This project is ready for Vercel.**
-- **Root Directory**: `.` (Default / Project Root).
-- No special configuration required.
-
-## 📂 Backend Components
-
-The backend code is also included in this repository for reference:
-- `wp-connector/`: WordPress Plugin.
-- `local-agent/`: Local Node.js Service.
+**No manual Vercel configuration is needed.**
+The `vercel.json` file handles the routing and build directory.
 
 ## Development
 ```bash
+cd cloud-pwa
 npm install
 npm run dev
 ```
