@@ -59,7 +59,10 @@ export default function Dashboard() {
                 </span>
               </td>
               <td className="p-4 text-right">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium">
+                <button
+                  onClick={() => window.location.href = '/mapping'}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium"
+                >
                   Skontrolovať
                 </button>
               </td>

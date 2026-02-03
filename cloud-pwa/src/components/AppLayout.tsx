@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Palette, Users, Clock, Box } from 'lucide-react';
+import { Package, Palette, Users, Clock, Box, Settings } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -39,6 +39,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link href="/history" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/history') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                         <Clock className="w-5 h-5" />
                         <span>História</span>
+                    </Link>
+
+                    <div className="my-2 border-t border-slate-800 mx-4"></div>
+
+                    <Link href="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/settings') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                        <Settings className="w-5 h-5" />
+                        <span>Nastavenia</span>
                     </Link>
                 </nav>
 
