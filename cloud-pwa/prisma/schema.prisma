@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          String   // SUPER_ADMIN, OPERATOR, VIEWER
+  status        String   @default("ACTIVE") // ACTIVE, INACTIVE
+  created_at    DateTime @default(now())
+}
+
+model Order {
+  id            Int      @id // Woo Order ID
+  customer_name String
+  template_key  String?
+  source_text   String   // Original text from Woo
+  ai_data       String?  // JSON stringified (Prisma SQLite doesn't support JSON type natively well, using String)
+  status        String   @default("PENDING") // PENDING, AI_READY, GENERATING, DONE, ERROR
+  preview_url   String?
+  agent_log     String?  // JSON stringified
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+model TemplateConfig {
+  key      String @id
+  manifest String // JSON stringified layer mapping
+}
+
+model Settings {
+  key   String @id
+  value String // Encrypted value
+}

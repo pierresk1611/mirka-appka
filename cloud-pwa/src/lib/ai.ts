@@ -1,71 +1,48 @@
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-// Note: In a real app, use environment variables. 
-// For this demo/codebase, we assume OPENAI_API_KEY is present in .env.local
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || 'mock_key_for_build',
-    dangerouslyAllowBrowser: true // Only if running client-side, but better server-side
-});
+const apiKey = process.env.OPENAI_API_KEY;
 
-export interface ParsedData {
-    NAME_MAIN?: string;
-    DATE_MAIN?: string;
-    TIME_MAIN?: string;
-    PLACE_MAIN?: string;
-    QUOTE_TOP?: string;
-    BODY_TEXT?: string;
-    BODY_FULL?: string;
-    [key: string]: string | undefined;
-}
+export const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
-export async function parseCustomerText(text: string, templateType: string = 'wedding'): Promise<ParsedData> {
-    // If no key is configured, return mock data
-    if (!process.env.OPENAI_API_KEY) {
-        console.warn('OpenAI API Key missing. Returning mock data.');
-        return {
-            NAME_MAIN: 'Peter & Jana (Mock)',
-            DATE_MAIN: '01.01.2027',
-            BODY_FULL: text
-        };
+export async function parseOrderText(text: string, templateKey: string) {
+    if (!openai) {
+        console.warn('OpenAI API Key missing, returning mock data.');
+        return mockParse(text, templateKey);
     }
-
-    const systemPrompt = `
-    You are an expert typography assistant for a print shop.
-    Your goal is to extract structured data from unstructured customer text for a ${templateType} invitation.
-    
-    Output JSON format with keys:
-    - NAME_MAIN: The main names (e.g., "Peter & Jana")
-    - DATE_MAIN: The date of the event
-    - TIME_MAIN: The time of the event
-    - PLACE_MAIN: The location/venue
-    - QUOTE_TOP: Any quote or poem at the top
-    - BODY_TEXT: The main body text excluding names/date/place if possible
-    - BODY_FULL: The entire text formatted nicely with line breaks (\n)
-    
-    If a field is missing, omit it.
-    Preserve grammar and capitalization exactly as in the user text, but fix obvious typos if requested.
-  `;
 
     try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: text }
-            ],
-            response_format: { type: "json_object" }
+        const prompt = `
+      You are a smart data extraction assistant.
+      Extract structured data from the following text based on the Template Key: "${templateKey}".
+      
+      Text: "${text}"
+      
+      Output JSON only. Use the following keys based on the template:
+      - For "FINGERPRINTS": { name_main, date, place, body_full }
+      - For "WED_...": { names, date }
+      - Default: { summary }
+    `;
+
+        const completion = await openai.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: 'gpt-4o',
+            response_format: { type: "json_object" },
         });
 
-        const content = response.choices[0].message.content;
-        if (content) {
-            return JSON.parse(content) as ParsedData;
-        }
-        throw new Error("Empty response from AI");
+        const content = completion.choices[0].message.content;
+        return JSON.parse(content || '{}');
 
     } catch (error) {
-        console.error("AI Parsing Failed:", error);
-        // Fallback: return raw text
-        return { BODY_FULL: text };
+        console.error('AI Processing Error:', error);
+        return mockParse(text, templateKey); // Fallback
     }
+}
+
+function mockParse(text: string, templateKey: string) {
+    // Simple heuristic fallback
+    return {
+        source: 'mock',
+        name_main: 'MOCK NAME',
+        body_full: text.substring(0, 50) + '...'
+    };
 }
