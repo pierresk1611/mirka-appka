@@ -60,7 +60,7 @@ export default function Dashboard() {
               </td>
               <td className="p-4 text-right">
                 <button
-                  onClick={() => window.location.href = '/mapping'}
+                  onClick={() => window.location.href = '/orders/41775'}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium"
                 >
                   Skontrolovať

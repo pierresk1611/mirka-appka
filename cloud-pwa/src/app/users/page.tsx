@@ -44,8 +44,8 @@ export default function UserManagement() {
                             <td className="p-4"><span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">Operátor</span></td>
                             <td className="p-4"><span className="text-green-600 text-xs font-bold">● Aktívny</span></td>
                             <td className="p-4 text-right">
-                                <button className="text-blue-600 hover:underline mr-3">Upraviť</button>
-                                <button className="text-red-500 hover:underline">Zmazať</button>
+                                <button onClick={() => alert('Edit User: Jana Grafiková')} className="text-blue-600 hover:underline mr-3">Upraviť</button>
+                                <button onClick={() => alert('Delete User: Jana Grafiková')} className="text-red-500 hover:underline">Zmazať</button>
                             </td>
                         </tr>
 
@@ -56,8 +56,8 @@ export default function UserManagement() {
                             <td className="p-4"><span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-bold">Viewer</span></td>
                             <td className="p-4"><span className="text-gray-400 text-xs font-bold">● Neaktívny</span></td>
                             <td className="p-4 text-right">
-                                <button className="text-blue-600 hover:underline mr-3">Aktivovať</button>
-                                <button className="text-red-500 hover:underline">Zmazať</button>
+                                <button onClick={() => alert('Activate User: Test Účet')} className="text-blue-600 hover:underline mr-3">Aktivovať</button>
+                                <button onClick={() => alert('Delete User: Test Účet')} className="text-red-500 hover:underline">Zmazať</button>
                             </td>
                         </tr>
                     </tbody>
