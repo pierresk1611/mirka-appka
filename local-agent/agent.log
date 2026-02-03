@@ -1,0 +1,30 @@
+{"level":"info","message":"Starting AutoDesign Local Agent v3.2...","timestamp":"2026-02-03T13:23:10.712Z"}
+{"level":"info","message":"Watching Dropbox Templates at: /Users/apple/Dropbox/TEMPLATES","timestamp":"2026-02-03T13:23:10.719Z"}
+{"level":"info","message":"Initial scan complete. Ready for changes.","timestamp":"2026-02-03T13:23:10.726Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:23:23.071Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:23:23.073Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:23:23.075Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:23:30.827Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:23:30.827Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:23:30.827Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:23:40.837Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:23:40.837Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:23:40.838Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:23:50.840Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:23:50.840Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:23:50.840Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:24:00.839Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:24:00.839Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:24:00.839Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:24:10.827Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:24:10.827Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:24:10.828Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:24:20.818Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:24:20.819Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:24:20.819Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:24:30.834Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:24:30.834Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:24:30.835Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T13:24:40.825Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T13:24:40.826Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T13:24:40.826Z"}

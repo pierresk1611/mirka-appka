@@ -14,6 +14,16 @@ class Photoshop {
      * @param {string} outputPath - Path to save the output.
      */
     async processJob(templatePath, jobData, outputPath) {
+        if (process.env.ENABLE_SIMULATION === 'true') {
+            this.logger.info(`[SIMULATION] Processing job for ${templatePath}`);
+            this.logger.info(`[SIMULATION] Data: ${JSON.stringify(jobData)}`);
+            this.logger.info(`[SIMULATION] Simulating Photoshop PDF generation... (3s)`);
+            return new Promise(resolve => setTimeout(() => {
+                this.logger.info(`[SIMULATION] Job Finished. Output at: ${outputPath}`);
+                resolve("Job Completed (Simulated)");
+            }, 3000));
+        }
+
         const scriptPath = path.resolve(__dirname, 'scripts', 'processor.jsx');
 
         // We pass data to the JSX script by writing a temporary JSON file
