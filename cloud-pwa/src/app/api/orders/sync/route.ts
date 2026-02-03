@@ -1,85 +1,94 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseOrderText } from '@/lib/ai'; // Assuming this exists or mocked
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
 
-// MOCK DATA for demonstration if no Woo credentials
-const MOCK_WOO_ORDERS = [
-    {
-        id: 41777,
-        billing: { first_name: 'Jozef', last_name: 'Novák', email: 'jozef@example.com' },
-        line_items: [{ name: 'Svadobné Oznámenie - FINGERPRINTS (V1)', meta_data: [] }],
-        customer_note: 'Prosím o zmenu dátumu na 15.09.2026',
-        date_created: new Date().toISOString(),
-    },
-    {
-        id: 41778,
-        billing: { first_name: 'Mária', last_name: 'Kováčová', email: 'maria@example.com' },
-        line_items: [{ name: 'Etiketa na víno - WED_042', meta_data: [] }],
-        customer_note: 'Mená: Mária & Peter',
-        date_created: new Date().toISOString(),
-    }
-];
-
 export async function POST() {
     try {
-        // 1. Fetch Settings (Woo Credentials)
-        // In real app: const wooUrl = await prisma.settings.findUnique({ where: { key: 'WOO_URL' } });
-        // For now, we use Mock logic or Env vars
+        // 1. Credentials
+        const wooUrl = process.env.WOO_URL;
+        const wooKey = process.env.WOO_API_KEY;
 
-        // Simulating Woo Fetch
-        console.log('Fetching orders from WooCommerce...');
-        const orders = MOCK_WOO_ORDERS;
+        if (!wooUrl || !wooKey) {
+            console.warn('Missing WOO_URL or WOO_API_KEY. Using Mock Data.');
+        }
 
-        const result = {
-            added: 0,
-            updated: 0,
-            errors: 0
-        };
+        let orders: any[] = [];
+
+        if (wooUrl && wooKey) {
+            console.log(`Fetching orders from ${wooUrl}...`);
+            try {
+                const res = await fetch(`${wooUrl}/wp-json/autodesign/v1/orders`, {
+                    headers: {
+                        'X-AutoDesign-Key': wooKey
+                    },
+                    cache: 'no-store'
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    console.error('Woo API Error:', res.status, txt);
+                    throw new Error(`Woo API returned ${res.status}`);
+                }
+
+                const data = await res.json();
+                if (data.status === 'success' && Array.isArray(data.orders)) {
+                    orders = data.orders;
+                } else {
+                    console.error('Invalid Woo Response:', data);
+                }
+            } catch (e) {
+                console.error('Fetch failed:', e);
+                // Return 502 to indicate upstream error, or fall back to empty?
+                // Let's return error so user knows connection failed
+                return NextResponse.json({ error: 'Failed to connect to WooCommerce. Check URL/Key.' }, { status: 502 });
+            }
+        } else {
+            // Keep Mock for dev if env missing
+            orders = [
+                {
+                    order_id: 99999,
+                    status: 'processing',
+                    billing: { first_name: 'MOCK', last_name: 'USER', email: 'mock@test.com' },
+                    items: [{ product_name: 'Svadobné Oznámenie - FINGERPRINTS', template_key: 'FINGERPRINTS', meta: { note: 'Mock Data' } }]
+                }
+            ];
+        }
+
+        const result = { added: 0, updated: 0, errors: 0 };
 
         for (const order of orders) {
             try {
-                // 2. Identify Template Key
-                const productName = order.line_items[0]?.name || '';
-                let templateKey = 'UNKNOWN';
-                if (productName.includes('FINGERPRINTS')) templateKey = 'FINGERPRINTS';
-                if (productName.includes('WED_')) {
-                    const match = productName.match(/(WED_\d+)/);
-                    if (match) templateKey = match[1];
-                }
+                // Map Plugin Data structure to Prisma
+                const id = order.order_id;
+                const customerName = `${order.billing.first_name} ${order.billing.last_name}`;
 
-                // 3. AI Parsing (Mock)
-                // In real app: Call OpenAI here
-                const aiData = {
-                    name_main: `${order.billing.first_name} & Partner`,
-                    date: "15.09.2026",
-                    place: "Dóm sv. Alžbety",
-                    body_text: order.customer_note || "Default text..."
-                };
+                // Construct Source Text from items
+                const sourceText = JSON.stringify(order.items, null, 2);
 
-                // 4. Upsert Order to DB
+                // Determine Main Template (first found)
+                const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
+                const templateKey = firstItem?.template_key || 'UNKNOWN';
+
+                // Status remains AI_READY
                 await prisma.order.upsert({
-                    where: { id: order.id },
-                    update: {
-                        // Update mutable fields if needed
-                        status: 'AI_READY' // Reset status on sync? Or keep existing? Let's assume sync brings new info.
-                    },
+                    where: { id: id },
+                    update: {},
                     create: {
-                        id: order.id,
-                        customer_name: `${order.billing.first_name} ${order.billing.last_name}`,
+                        id: id,
+                        customer_name: customerName,
                         template_key: templateKey,
-                        source_text: order.customer_note || JSON.stringify(order.line_items),
-                        ai_data: JSON.stringify(aiData),
+                        source_text: sourceText,
+                        // AI Data is initially null, to be processed by /api/ai/process
                         status: 'AI_READY',
-                        created_at: new Date(order.date_created)
+                        created_at: new Date()
                     }
                 });
 
                 result.added++;
             } catch (err) {
-                console.error(`Error processing order ${order.id}:`, err);
+                console.error(`Error processing order ${order.order_id}:`, err);
                 result.errors++;
             }
         }
