@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    reactCompiler: true,
+    // reactCompiler: true, // Disabled for stability
     eslint: {
         ignoreDuringBuilds: true,
     },
