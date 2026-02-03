@@ -22,12 +22,22 @@ const MOCK_JOBS: Job[] = [
 export default function JobQueue() {
     const [jobs] = useState<Job[]>(MOCK_JOBS);
 
+    const getStatusLabel = (status: Job['status']) => {
+        switch (status) {
+            case 'pending': return 'Čaká';
+            case 'processing': return 'Spracováva sa';
+            case 'completed': return 'Hotovo';
+            case 'error': return 'Chyba';
+            default: return status;
+        }
+    };
+
     return (
         <div className="w-full bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Job Queue</h2>
+                <h2 className="text-xl font-bold text-gray-800">Tlačová fronta</h2>
                 <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                    {jobs.length} Pending
+                    {jobs.length} Čakajúce
                 </span>
             </div>
 
@@ -35,17 +45,21 @@ export default function JobQueue() {
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
                         <tr>
-                            <th className="px-6 py-4 font-medium">Order</th>
-                            <th className="px-6 py-4 font-medium">Product / Template</th>
-                            <th className="px-6 py-4 font-medium">Customer</th>
-                            <th className="px-6 py-4 font-medium">Status</th>
-                            <th className="px-6 py-4 font-medium text-right">Actions</th>
+                            <th className="px-6 py-4 font-medium">Objednávka</th>
+                            <th className="px-6 py-4 font-medium">Produkt / Šablóna</th>
+                            <th className="px-6 py-4 font-medium">Zákazník</th>
+                            <th className="px-6 py-4 font-medium">Stav</th>
+                            <th className="px-6 py-4 font-medium text-right">Akcie</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {jobs.map((job) => (
-                            <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-900">{job.orderId}</td>
+                            <tr
+                                key={job.id}
+                                className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                                onClick={() => window.location.href = `/mapping?id=${job.id}`}
+                            >
+                                <td className="px-6 py-4 font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{job.orderId}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex flex-col">
                                         <span className="font-medium text-gray-800">{job.productName}</span>
@@ -64,14 +78,14 @@ export default function JobQueue() {
                                         {job.status === 'processing' && <Play className="w-3 h-3 mr-1" />}
                                         {job.status === 'completed' && <CheckCircle className="w-3 h-3 mr-1" />}
                                         {job.status === 'error' && <AlertCircle className="w-3 h-3 mr-1" />}
-                                        {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                                        {getStatusLabel(job.status)}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-right space-x-2">
-                                    <button className="text-gray-400 hover:text-blue-600 transition-colors" title="Edit Mapping">
+                                    <button className="text-gray-400 hover:text-blue-600 transition-colors" title="Upraviť Mapovanie">
                                         <FileEdit className="w-5 h-5" />
                                     </button>
-                                    <button className="text-gray-400 hover:text-green-600 transition-colors" title="Force Start">
+                                    <button className="text-gray-400 hover:text-green-600 transition-colors" title="Spustiť">
                                         <Play className="w-5 h-5" />
                                     </button>
                                 </td>
