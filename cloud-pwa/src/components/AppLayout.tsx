@@ -3,47 +3,59 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Palette, Users, Clock, Box, Settings } from 'lucide-react';
+import { Package, Palette, Users, Clock, Settings, Zap } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
-    const isActive = (path: string) => pathname === path;
+    // Helper for active link styles
+    const isActive = (path: string) => pathname === path
+        ? "bg-blue-600 text-white shadow-md"
+        : "text-slate-400 hover:bg-slate-800 hover:text-white";
+
+    // Helper to determine page title
+    const getPageTitle = () => {
+        if (pathname === '/') return 'Dashboard';
+        if (pathname.startsWith('/orders')) return 'Detail Objednávky';
+        if (pathname === '/users') return 'Správa užívateľov';
+        if (pathname === '/settings') return 'Nastavenia';
+        if (pathname === '/templates') return 'Šablóny';
+        if (pathname === '/history') return 'História';
+        return 'AutoDesign Cloud';
+    };
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50 font-sans text-slate-800">
 
-            {/* SIDEBAR (Tmavé menu) */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0">
+            {/* SIDEBAR */}
+            <aside className="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 transition-all duration-300">
                 <div className="p-6 text-xl font-bold tracking-wider flex items-center gap-2">
-                    {/* Logo Icon */}
-                    <span className="text-blue-400"><Box className="w-6 h-6" /></span> AutoDesign
+                    <Zap className="text-blue-400 w-6 h-6" fill="currentColor" /> AutoDesign
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 mt-4">
-                    <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <nav className="flex-1 px-4 space-y-2 mt-4 flex flex-col">
+                    <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/')}`}>
                         <Package className="w-5 h-5" />
                         <span>Objednávky</span>
                     </Link>
 
-                    <Link href="/templates" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/templates') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                        <Palette className="w-5 h-5" />
-                        <span>Šablóny</span>
-                    </Link>
-
-                    <Link href="/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/users') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    <Link href="/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/users')}`}>
                         <Users className="w-5 h-5" />
                         <span>Užívatelia</span>
                     </Link>
 
-                    <Link href="/history" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/history') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    <Link href="/templates" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/templates')}`}>
+                        <Palette className="w-5 h-5" />
+                        <span>Šablóny</span>
+                    </Link>
+
+                    <Link href="/history" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/history')}`}>
                         <Clock className="w-5 h-5" />
                         <span>História</span>
                     </Link>
 
-                    <div className="my-2 border-t border-slate-800 mx-4"></div>
-
-                    <Link href="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/settings') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    {/* Settings Link (Bottom) */}
+                    <Link href="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition mt-auto mb-4 ${isActive('/settings')}`}>
                         <Settings className="w-5 h-5" />
                         <span>Nastavenia</span>
                     </Link>
@@ -62,10 +74,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* MAIN CONTENT */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
-
-                {/* HEADER */}
                 <header className="bg-white border-b px-8 py-4 flex justify-between items-center flex-shrink-0 z-10">
-                    <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">
+                        {getPageTitle()}
+                    </h1>
 
                     {/* Status Agenta */}
                     <div className="flex items-center gap-4">
@@ -79,7 +91,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
-                {/* PAGE CONTENT */}
                 <div className="flex-1 overflow-y-auto p-8">
                     {children}
                 </div>
