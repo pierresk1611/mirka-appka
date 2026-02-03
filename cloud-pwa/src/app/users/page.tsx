@@ -15,12 +15,10 @@ interface UserData {
 export default function UserManagement() {
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-    // Form State
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'OPERATOR' });
-
-    // Fetch Users
+    // Fetch Users (unchanged)
     const fetchUsers = async () => {
         try {
             const res = await fetch('/api/users');
@@ -39,28 +37,59 @@ export default function UserManagement() {
         fetchUsers();
     }, []);
 
-    // Handle Create
-    const handleCreateUser = async (e: React.FormEvent) => {
+    // Open Modal for Create
+    const openCreateModal = () => {
+        setEditMode(false);
+        setSelectedUserId(null);
+        setNewUser({ name: '', email: '', password: '', role: 'OPERATOR' });
+        setIsModalOpen(true);
+    };
+
+    // Open Modal for Edit
+    const handleEdit = (user: UserData) => {
+        setEditMode(true);
+        setSelectedUserId(user.id);
+        setNewUser({ name: user.name, email: user.email, password: '', role: user.role }); // Password empty by default
+        setIsModalOpen(true);
+    };
+
+    // Handle Save (Create or Update)
+    const handleSaveUser = async (e: React.FormEvent) => {
         e.preventDefault();
+
         try {
-            const res = await fetch('/api/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newUser),
-            });
+            let res;
+            if (editMode && selectedUserId) {
+                // UPDATE
+                const payload: any = { ...newUser };
+                if (!payload.password) delete payload.password; // Don't send empty password
+
+                res = await fetch(`/api/users/${selectedUserId}`, {
+                    method: 'PUT', // or PATCH
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                // CREATE
+                res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newUser),
+                });
+            }
+
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewUser({ name: '', email: '', password: '', role: 'OPERATOR' });
                 fetchUsers();
             } else {
-                alert('Chyba pri vytváraní užívateľa');
+                alert('Chyba pri ukladaní užívateľa');
             }
         } catch (error) {
             console.error(error);
         }
     };
 
-    // Handle Delete
+    // Handle Delete (unchanged)
     const handleDelete = async (id: string) => {
         if (!confirm('Naozaj chcete zmazať tohto užívateľa?')) return;
         try {
@@ -71,7 +100,7 @@ export default function UserManagement() {
         }
     };
 
-    // Handle Toggle Status
+    // Handle Toggle Status (unchanged)
     const handleToggleStatus = async (user: UserData) => {
         const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         try {
@@ -93,7 +122,7 @@ export default function UserManagement() {
                     <Users className="w-6 h-6 text-blue-600" /> Správa užívateľov
                 </h2>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openCreateModal}
                     className="bg-slate-900 text-white px-5 py-2.5 rounded-lg hover:bg-slate-700 transition flex items-center gap-2 font-medium shadow-md"
                 >
                     <Plus className="w-4 h-4" /> Pridať užívateľa
@@ -142,7 +171,7 @@ export default function UserManagement() {
                                         </button>
                                     </td>
                                     <td className="p-4 text-right flex justify-end gap-2">
-                                        <button className="text-blue-600 hover:bg-blue-50 p-2 rounded transition" title="Upraviť">
+                                        <button onClick={() => handleEdit(user)} className="text-blue-600 hover:bg-blue-50 p-2 rounded transition" title="Upraviť">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button onClick={() => handleDelete(user.id)} className="text-red-500 hover:bg-red-50 p-2 rounded transition" title="Zmazať">
@@ -166,10 +195,10 @@ export default function UserManagement() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                         <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                            <h3 className="font-bold text-gray-800">Pridať nového užívateľa</h3>
+                            <h3 className="font-bold text-gray-800">{editMode ? 'Upraviť užívateľa' : 'Pridať nového užívateľa'}</h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><XCircle className="w-5 h-5" /></button>
                         </div>
-                        <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+                        <form onSubmit={handleSaveUser} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Meno</label>
                                 <input required className="w-full border p-2 rounded" value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
@@ -179,8 +208,14 @@ export default function UserManagement() {
                                 <input required type="email" className="w-full border p-2 rounded" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Heslo</label>
-                                <input required type="password" className="w-full border p-2 rounded" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Heslo {editMode && <span className="text-gray-400 text-xs font-normal">(ponechajte prázdne pre zachovanie)</span>}</label>
+                                <input
+                                    type="password"
+                                    className="w-full border p-2 rounded"
+                                    value={newUser.password}
+                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                    required={!editMode} // Required only for new users
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Rola</label>
@@ -191,7 +226,9 @@ export default function UserManagement() {
                                 </select>
                             </div>
                             <div className="pt-2">
-                                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">Vytvoriť užívateľa</button>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">
+                                    {editMode ? 'Uložiť zmeny' : 'Vytvoriť užívateľa'}
+                                </button>
                             </div>
                         </form>
                     </div>

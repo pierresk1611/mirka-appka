@@ -1,20 +1,31 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+import bcrypt from 'bcryptjs';
+
 // PUT: Update užívateľa
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, email, role } = body;
+        const { name, email, role, password } = body;
+
+        const updateData: any = { name, email, role };
+
+        if (password && password.trim() !== '') {
+            updateData.password_hash = await bcrypt.hash(password, 10);
+        }
 
         const updatedUser = await prisma.user.update({
             where: { id },
-            data: { name, email, role },
+            data: updateData,
         });
 
-        return NextResponse.json(updatedUser);
+        const { password_hash: _, ...userWithoutPassword } = updatedUser;
+
+        return NextResponse.json(userWithoutPassword);
     } catch (error) {
+        console.error('Update Error:', error);
         return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
     }
 }
