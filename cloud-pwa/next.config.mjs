@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    const nextConfig = {
-        // output: 'standalone', // Removed for Vercel deployment stability
-        // reactCompiler: true, // Disabled for stability
-        eslint: {
-            ignoreDuringBuilds: true,
-        },
-        typescript: {
-            ignoreBuildErrors: true,
-        },
-    };
+    // output: 'standalone', // Removed for Vercel deployment stability
+    // reactCompiler: true, // Disabled for stability
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    typescript: {
+        ignoreBuildErrors: true,
+    },
+};
 
-    export default nextConfig;
+export default nextConfig;
