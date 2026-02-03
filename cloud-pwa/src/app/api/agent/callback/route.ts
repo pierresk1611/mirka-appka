@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // POST: Agent hlási výsledok (Callback)
 export async function POST(request: Request) {
     try {

@@ -70,7 +70,14 @@ class LocalAgent {
 
         try {
             // Define paths
-            const templateDir = this.watcher.templates.get(job.template);
+            let templateDir = this.watcher.templates.get(job.template);
+
+            // SIMULATION BYPASS
+            if (!templateDir && process.env.ENABLE_SIMULATION === 'true') {
+                logger.info(`[SIMULATION] Template ${job.template} not found on disk, but proceeding in simulation mode.`);
+                templateDir = path.join(config.dropboxRoot, job.template); // Dummy path
+            }
+
             if (!templateDir) {
                 throw new Error(`Template not found locally: ${job.template}`);
             }
@@ -84,7 +91,7 @@ class LocalAgent {
 
             // Execute Photoshop Script
             // We verify file existence first
-            if (!fs.existsSync(templatePath)) {
+            if (!fs.existsSync(templatePath) && process.env.ENABLE_SIMULATION !== 'true') {
                 throw new Error(`Template PSD missing: ${templatePath}`);
             }
 

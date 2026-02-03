@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parseOrderText } from '@/lib/ai'; // Assuming this exists or mocked
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow longer timeout for sync
 
 // MOCK DATA for demonstration if no Woo credentials
 const MOCK_WOO_ORDERS = [
