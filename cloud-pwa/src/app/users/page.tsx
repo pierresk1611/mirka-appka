@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '../../components/AppLayout';
-import { User, Shield, Trash2, Edit2, CheckCircle, XCircle, Plus, Loader2 } from 'lucide-react';
+import { User, Shield, Trash2, Edit2, CheckCircle, XCircle, Plus, Loader2, Users } from 'lucide-react';
 
 interface UserData {
     id: string;
@@ -128,7 +128,7 @@ export default function UserManagement() {
                                     <td className="p-4 text-gray-600 font-mono text-sm">{user.email}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${user.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-700' :
-                                                user.role === 'OPERATOR' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                                            user.role === 'OPERATOR' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
                                             }`}>
                                             {user.role}
                                         </span>
