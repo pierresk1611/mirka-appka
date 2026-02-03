@@ -709,3 +709,70 @@
 {"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:15:39.612Z"}
 {"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:15:41.711Z"}
 {"level":"error","message":"Error polling API:","timestamp":"2026-02-03T14:15:49.669Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T14:15:59.220Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T14:15:59.221Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T14:15:59.222Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T14:15:59.670Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T14:15:59.671Z"}
+{"level":"info","message":"[SIMULATION] Template JSO_15 not found on disk, but proceeding in simulation mode.","timestamp":"2026-02-03T14:15:59.675Z"}
+{"level":"info","message":"[SIMULATION] Processing job for /Users/apple/Dropbox/TEMPLATES/JSO_15/JSO_15.psd","timestamp":"2026-02-03T14:15:59.687Z"}
+{"level":"info","message":"[SIMULATION] Data: {\"NAME_MAIN\":\"Peter & Jana\",\"DATE_MAIN\":\"24.08.2026\"}","timestamp":"2026-02-03T14:15:59.688Z"}
+{"level":"info","message":"[SIMULATION] Simulating Photoshop PDF generation... (3s)","timestamp":"2026-02-03T14:15:59.688Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T14:16:01.748Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T14:16:01.748Z"}
+{"level":"error","message":"Job Failed: Template not found locally: JSO_15","timestamp":"2026-02-03T14:16:01.748Z"}
+{"level":"info","message":"[SIMULATION] Job Finished. Output at: /Users/apple/Dropbox/OUTPUT/1001","timestamp":"2026-02-03T14:16:02.688Z"}
+{"level":"info","message":"Job completed successfully.","timestamp":"2026-02-03T14:16:02.688Z"}
+{"level":"info","message":"Found 1 pending jobs.","timestamp":"2026-02-03T14:16:09.616Z"}
+{"level":"info","message":"Starting Job Processing: 2 (WED_042)","timestamp":"2026-02-03T14:16:09.617Z"}
+{"level":"info","message":"[SIMULATION] Template WED_042 not found on disk, but proceeding in simulation mode.","timestamp":"2026-02-03T14:16:09.617Z"}
+{"level":"info","message":"[SIMULATION] Processing job for /Users/apple/Dropbox/TEMPLATES/WED_042/WED_042.psd","timestamp":"2026-02-03T14:16:09.619Z"}
+{"level":"info","message":"[SIMULATION] Data: {\"NAME_MAIN\":\"Martin & Elena\",\"DATE_MAIN\":\"15.09.2026\"}","timestamp":"2026-02-03T14:16:09.619Z"}
+{"level":"info","message":"[SIMULATION] Simulating Photoshop PDF generation... (3s)","timestamp":"2026-02-03T14:16:09.619Z"}
+{"level":"info","message":"Found 1 pending jobs.","timestamp":"2026-02-03T14:16:11.825Z"}
+{"level":"info","message":"Starting Job Processing: 2 (WED_042)","timestamp":"2026-02-03T14:16:11.827Z"}
+{"level":"error","message":"Job Failed: Template not found locally: WED_042","timestamp":"2026-02-03T14:16:11.835Z"}
+{"level":"info","message":"[SIMULATION] Job Finished. Output at: /Users/apple/Dropbox/OUTPUT/1002","timestamp":"2026-02-03T14:16:12.650Z"}
+{"level":"info","message":"Job completed successfully.","timestamp":"2026-02-03T14:16:12.651Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:19.677Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:21.738Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:29.671Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:31.718Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:39.657Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:41.718Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:49.691Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:51.803Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:16:59.679Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:01.750Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:09.686Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:11.742Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:19.678Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:21.744Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:29.677Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:31.743Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:39.693Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:41.740Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:49.678Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:51.740Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:17:59.677Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:01.741Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:09.686Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:11.778Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:19.670Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:21.778Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:29.683Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:31.767Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:39.865Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:41.750Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:49.692Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:51.757Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:18:59.682Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:19:01.751Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:19:09.676Z"}
+{"level":"info","message":"Polling... No pending jobs.","timestamp":"2026-02-03T14:19:11.757Z"}
+{"level":"info","message":"Found 2 pending jobs.","timestamp":"2026-02-03T14:19:20.048Z"}
+{"level":"info","message":"Starting Job Processing: 1 (JSO_15)","timestamp":"2026-02-03T14:19:20.048Z"}
+{"level":"info","message":"[SIMULATION] Template JSO_15 not found on disk, but proceeding in simulation mode.","timestamp":"2026-02-03T14:19:20.048Z"}
+{"level":"info","message":"[SIMULATION] Processing job for /Users/apple/Dropbox/TEMPLATES/JSO_15/JSO_15.psd","timestamp":"2026-02-03T14:19:20.049Z"}
+{"level":"info","message":"[SIMULATION] Data: {\"NAME_MAIN\":\"Peter & Jana\",\"DATE_MAIN\":\"24.08.2026\"}","timestamp":"2026-02-03T14:19:20.049Z"}
+{"level":"info","message":"[SIMULATION] Simulating Photoshop PDF generation... (3s)","timestamp":"2026-02-03T14:19:20.049Z"}
