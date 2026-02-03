@@ -17,7 +17,7 @@ export default function Home() {
           <div className="flex items-center space-x-6">
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-500">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span>System Online</span>
+              <span>Systém Online</span>
             </div>
             <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm">
               OP
@@ -30,13 +30,13 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-end">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Operator Dashboard</h2>
-            <p className="text-gray-500 mt-1">Manage pending print jobs and verify AI mapping.</p>
+            <h2 className="text-2xl font-bold text-gray-900">Panel Operátora</h2>
+            <p className="text-gray-500 mt-1">Správa tlačových úloh a kontrola AI mapovania.</p>
           </div>
           <div className="hidden sm:block">
             <div className="inline-flex rounded-md shadow-sm">
               <button className="px-4 py-2 border border-blue-600 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                Refresh Queue
+                Obnoviť zoznam
               </button>
             </div>
           </div>
