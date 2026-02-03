@@ -1,10 +1,5 @@
 "use client";
 
-import React from 'react';
-import AppLayout from '../components/AppLayout';
-
-"use client";
-
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
