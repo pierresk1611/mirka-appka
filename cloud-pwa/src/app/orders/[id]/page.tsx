@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
 import { Loader2, Save, Send, AlertTriangle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function OrderDetail() {
     const router = useRouter();
     const params = useParams();
