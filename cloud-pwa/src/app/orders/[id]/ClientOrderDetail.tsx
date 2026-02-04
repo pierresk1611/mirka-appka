@@ -14,6 +14,8 @@ export default function ClientOrderDetail() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    useEffect(() => { console.log('ClientOrderDetail Loaded - Version Blue Drop'); }, []);
+
     // Editor State
     interface FormData {
         [key: string]: string;
