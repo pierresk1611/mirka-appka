@@ -1,7 +1,7 @@
-import ClientOrderDetail from './ClientOrderDetail';
+import OrderDetailView from './OrderDetailView';
 
 export const dynamic = 'force-dynamic';
 
 export default function Page() {
-    return <ClientOrderDetail />;
+    return <OrderDetailView />;
 }

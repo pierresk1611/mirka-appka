@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
 import { Loader2, Save, Send, AlertTriangle } from 'lucide-react';
 
-export default function ClientOrderDetail() {
+export default function OrderDetailView() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id;
@@ -14,7 +14,7 @@ export default function ClientOrderDetail() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => { console.log('ClientOrderDetail Loaded - Version Blue Drop'); }, []);
+    useEffect(() => { console.log('OrderDetailView Loaded - Version Blue Drop'); }, []);
 
     // Editor State
     interface FormData {
@@ -135,6 +135,7 @@ export default function ClientOrderDetail() {
                             <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">
                                 {order.status}
                             </span>
+                            <span className="bg-purple-100 text-purple-700 text-[10px] px-1 rounded border border-purple-200">v3.1</span>
                         </h1>
                         <p className="text-sm text-slate-500">Šablóna: <span className="font-mono font-bold text-slate-700">{order.template_key}</span></p>
                     </div>
