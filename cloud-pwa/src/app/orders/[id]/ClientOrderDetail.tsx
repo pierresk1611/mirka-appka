@@ -157,7 +157,7 @@ export default function ClientOrderDetail() {
             </div>
 
             {/* 3-Column Layout */}
-            <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-200px)]">
+            <div className="flex flex-col md:flex-row gap-6 md:h-[calc(100vh-200px)]">
 
                 {/* 1. Source */}
                 <div className="w-full md:w-1/4 bg-white border border-gray-200 rounded-xl flex flex-col shadow-sm">

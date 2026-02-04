@@ -3,59 +3,61 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Palette, Users, Clock, Settings, Zap } from 'lucide-react';
+import { Package, Palette, Users, Clock, Settings, Zap, Menu, X } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
-    // Helper for active link styles
-    const isActive = (path: string) => pathname === path
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+    // Active link styles (Desktop & Mobile)
+    const getLinkClass = (path: string) => pathname === path
         ? "bg-blue-600 text-white shadow-md"
         : "text-slate-400 hover:bg-slate-800 hover:text-white";
 
-    // Helper to determine page title
-    const getPageTitle = () => {
-        if (pathname === '/') return 'Dashboard';
-        if (pathname.startsWith('/orders')) return 'Detail Objednávky';
-        if (pathname === '/users') return 'Správa užívateľov';
-        if (pathname === '/settings') return 'Nastavenia';
-        if (pathname === '/templates') return 'Šablóny';
-        if (pathname === '/history') return 'História';
-        return 'AutoDesign Cloud';
-    };
+    const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50 font-sans text-slate-800">
 
-            {/* SIDEBAR */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 transition-all duration-300">
+            {/* MOBILE HEADER (Visible on md:hidden) */}
+            <div className="md:hidden fixed top-0 w-full bg-slate-900 text-white z-50 flex justify-between items-center px-6 py-4 border-b border-slate-700">
+                <div className="text-lg font-bold tracking-wider flex items-center gap-2">
+                    <Zap className="text-blue-400 w-5 h-5" fill="currentColor" /> AutoDesign
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                    {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+            </div>
+
+            {/* DESKTOP SIDEBAR (Hidden on mobile) */}
+            <aside className="hidden md:flex w-64 bg-slate-900 text-white flex-col flex-shrink-0 transition-all duration-300">
                 <div className="p-6 text-xl font-bold tracking-wider flex items-center gap-2">
                     <Zap className="text-blue-400 w-6 h-6" fill="currentColor" /> AutoDesign
                 </div>
 
                 <nav className="flex-1 px-4 space-y-2 mt-4 flex flex-col">
-                    <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/')}`}>
+                    <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/')}`}>
                         <Package className="w-5 h-5" />
                         <span>Objednávky</span>
                     </Link>
 
-                    <Link href="/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/users')}`}>
+                    <Link href="/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/users')}`}>
                         <Users className="w-5 h-5" />
                         <span>Užívatelia</span>
                     </Link>
 
-                    <Link href="/templates" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/templates')}`}>
+                    <Link href="/templates" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/templates')}`}>
                         <Palette className="w-5 h-5" />
                         <span>Šablóny</span>
                     </Link>
 
-                    <Link href="/history" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive('/history')}`}>
+                    <Link href="/history" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/history')}`}>
                         <Clock className="w-5 h-5" />
                         <span>História</span>
                     </Link>
 
-                    {/* Settings Link (Bottom) */}
-                    <Link href="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition mt-auto mb-4 ${isActive('/settings')}`}>
+                    <Link href="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition mt-auto mb-4 ${getLinkClass('/settings')}`}>
                         <Settings className="w-5 h-5" />
                         <span>Nastavenia</span>
                     </Link>
@@ -72,9 +74,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
             </aside>
 
+            {/* MOBILE MENU OVERLAY */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden fixed inset-0 z-40 bg-slate-900 pt-20 px-6">
+                    <nav className="flex flex-col space-y-4">
+                        <Link href="/" onClick={closeMobileMenu} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/')}`}>
+                            <Package className="w-5 h-5" />
+                            <span>Objednávky</span>
+                        </Link>
+                        <Link href="/users" onClick={closeMobileMenu} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/users')}`}>
+                            <Users className="w-5 h-5" />
+                            <span>Užívatelia</span>
+                        </Link>
+                        <Link href="/templates" onClick={closeMobileMenu} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/templates')}`}>
+                            <Palette className="w-5 h-5" />
+                            <span>Šablóny</span>
+                        </Link>
+                        <Link href="/history" onClick={closeMobileMenu} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/history')}`}>
+                            <Clock className="w-5 h-5" />
+                            <span>História</span>
+                        </Link>
+                        <Link href="/settings" onClick={closeMobileMenu} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${getLinkClass('/settings')}`}>
+                            <Settings className="w-5 h-5" />
+                            <span>Nastavenia</span>
+                        </Link>
+                    </nav>
+                </div>
+            )}
+
             {/* MAIN CONTENT */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="bg-white border-b px-8 py-4 flex justify-between items-center flex-shrink-0 z-10">
+            <main className="flex-1 flex flex-col h-screen overflow-hidden pt-16 md:pt-0">
+                <header className="hidden md:flex bg-white border-b px-8 py-4 justify-between items-center flex-shrink-0">
                     <h1 className="text-2xl font-bold text-slate-800">
                         {getPageTitle()}
                     </h1>
@@ -91,7 +121,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     {children}
                 </div>
             </main>

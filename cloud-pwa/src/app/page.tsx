@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../components/AppLayout';
+import Link from 'next/link';
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
 interface Order {
@@ -113,39 +114,72 @@ export default function Dashboard() {
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-slate-500 text-xs uppercase tracking-wider border-b">
-                <th className="p-4 font-semibold">Objednávka</th>
-                <th className="p-4 font-semibold">Zákazník</th>
-                <th className="p-4 font-semibold">Šablóna (Key)</th>
-                <th className="p-4 font-semibold">Stav spracovania</th>
-                <th className="p-4 font-semibold text-right">Akcia</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
-              {orders.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-400">Žiadne objednávky. Kliknite na "Obnoviť zoznam".</td></tr>
-              ) : orders.map(order => (
-                <tr key={order.id} className="hover:bg-blue-50 transition border-l-4 border-transparent hover:border-blue-500">
-                  <td className="p-4 font-medium text-slate-900">#{order.id}</td>
-                  <td className="p-4 font-medium">{order.customer_name}</td>
-                  <td className="p-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono font-bold">{order.template_key || 'N/A'}</span></td>
-                  <td className="p-4">{getStatusBadge(order.status)}</td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => window.location.href = getLink(order.id)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium text-xs"
-                    >
-                      Skontrolovať
-                    </button>
-                  </td>
+          <>
+            {/* DESKTOP TABLE */}
+            <table className="hidden md:table w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 text-slate-500 text-xs uppercase tracking-wider border-b">
+                  <th className="p-4 font-semibold">Objednávka</th>
+                  <th className="p-4 font-semibold">Zákazník</th>
+                  <th className="p-4 font-semibold">Šablóna (Key)</th>
+                  <th className="p-4 font-semibold">Stav spracovania</th>
+                  <th className="p-4 font-semibold text-right">Akcia</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-sm">
+                {orders.length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-400">Žiadne objednávky. Kliknite na "Obnoviť zoznam".</td></tr>
+                ) : orders.map(order => (
+                  <tr key={order.id} className="hover:bg-blue-50 transition border-l-4 border-transparent hover:border-blue-500">
+                    <td className="p-4 font-medium text-slate-900">#{order.id}</td>
+                    <td className="p-4 font-medium">{order.customer_name}</td>
+                    <td className="p-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono font-bold">{order.template_key || 'N/A'}</span></td>
+                    <td className="p-4">{getStatusBadge(order.status)}</td>
+                    <td className="p-4 text-right">
+                      <Link href={`/orders/${order.id}`}>
+                        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium text-xs">
+                          Skontrolovať
+                        </button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* MOBILE VIEW (CARDS) */}
+            <div className="md:hidden space-y-4 p-4 bg-gray-50">
+              {orders.length === 0 ? (
+                <div className="text-center text-slate-400 p-8">Žiadne objednávky.</div>
+              ) : orders.map((order) => (
+                <div key={order.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-lg font-bold text-slate-800">#{order.id}</span>
+                      <div className="text-sm text-slate-500">{order.customer_name}</div>
+                    </div>
+                    {/* Status Badge */}
+                    {getStatusBadge(order.status)}
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-400 uppercase font-bold">Šablóna</p>
+                    <p className="font-mono text-bold text-slate-700 bg-gray-100 px-2 py-1 rounded inline-block mt-1 text-sm">
+                      {order.template_key || 'N/A'}
+                    </p>
+                  </div>
+
+                  <Link href={`/orders/${order.id}`} className="block">
+                    <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-sm active:bg-blue-700 flex justify-center items-center gap-2">
+                      Skontrolovať <CheckCircle className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
-    </AppLayout>
+    </AppLayout >
   );
 }
