@@ -1,101 +1,112 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
 
 export async function POST() {
     try {
-        // 1. Credentials
-        const wooUrl = process.env.WOO_URL;
-        const wooKey = process.env.WOO_API_KEY;
-
-        if (!wooUrl || !wooKey) {
-            console.warn('Missing WOO_URL or WOO_API_KEY. Using Mock Data.');
-        }
-
-        let orders: any[] = [];
-
-        if (wooUrl && wooKey) {
-            console.log(`Fetching orders from ${wooUrl}...`);
-            try {
-                const res = await fetch(`${wooUrl}/wp-json/autodesign/v1/orders`, {
-                    headers: {
-                        'X-AutoDesign-Key': wooKey
-                    },
-                    cache: 'no-store'
-                });
-
-                if (!res.ok) {
-                    const txt = await res.text();
-                    console.error('Woo API Error:', res.status, txt);
-                    throw new Error(`Woo API returned ${res.status}`);
-                }
-
-                const data = await res.json();
-                if (data.status === 'success' && Array.isArray(data.orders)) {
-                    orders = data.orders;
-                } else {
-                    console.error('Invalid Woo Response:', data);
-                }
-            } catch (e) {
-                console.error('Fetch failed:', e);
-                // Return 502 to indicate upstream error, or fall back to empty?
-                // Let's return error so user knows connection failed
-                return NextResponse.json({ error: 'Failed to connect to WooCommerce. Check URL/Key.' }, { status: 502 });
+        // 1. Fetch Credentials from DB (Settings table)
+        const settings = await prisma.settings.findMany({
+            where: {
+                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS'] }
             }
-        } else {
-            // Keep Mock for dev if env missing
-            orders = [
-                {
-                    order_id: 99999,
-                    status: 'processing',
-                    billing: { first_name: 'MOCK', last_name: 'USER', email: 'mock@test.com' },
-                    items: [{ product_name: 'Svadobné Oznámenie - FINGERPRINTS', template_key: 'FINGERPRINTS', meta: { note: 'Mock Data' } }]
-                }
-            ];
+        });
+
+        const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
+        const wooCk = settings.find(s => s.key === 'WOO_CK')?.value;
+        const wooCs = settings.find(s => s.key === 'WOO_CS')?.value;
+
+        if (!wooUrl || !wooCk || !wooCs) {
+            console.warn('Missing WooCommerce Credentials in DB. Using Mock/Empty.');
+            // Logic to fall back to env or return empty?
+            // Prompt says: "Settings: Použi premenné z databázy"
+            if (process.env.WOO_URL && process.env.WOO_API_KEY) {
+                // Fallback to Env for backward compat if needed, but SDK needs CK/CS
+            }
+            return NextResponse.json({ error: 'Missing Woo Credentials in Settings' }, { status: 500 });
         }
 
+        // 2. Initialize Woo Client
+        const WooCommerce = new WooCommerceRestApi({
+            url: wooUrl,
+            consumerKey: wooCk,
+            consumerSecret: wooCs,
+            version: "wc/v3"
+        });
+
+        console.log(`Syncing orders from ${wooUrl}...`);
+
+        // 3. Fetch Processing Orders
+        const response = await WooCommerce.get("orders", {
+            status: "processing",
+            per_page: 20 // Limit batch size
+        });
+
+        const orders = response.data;
         const result = { added: 0, updated: 0, errors: 0 };
 
         for (const order of orders) {
             try {
-                // Map Plugin Data structure to Prisma
-                const id = order.order_id;
+                const id = order.id;
                 const customerName = `${order.billing.first_name} ${order.billing.last_name}`;
 
-                // Construct Source Text from items
-                const sourceText = JSON.stringify(order.items, null, 2);
+                // --- MAPPING LOGIC ---
+                // 1. Template Key from Line Items
+                let templateKey = 'UNKNOWN';
+                let allItemsText = [];
 
-                // Determine Main Template (first found)
-                const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
-                const templateKey = firstItem?.template_key || 'UNKNOWN';
+                for (const item of order.line_items) {
+                    const name = item.name || '';
+                    allItemsText.push(name);
 
-                // Status remains AI_READY
+                    // Logic: Check for known template keys in name or meta
+                    // Simple heuristic: If name contains "FINGERPRINTS" -> FINGERPRINTS
+                    if (name.toUpperCase().includes('FINGERPRINTS')) templateKey = 'FINGERPRINTS';
+
+                    // Check Meta for "Extra Product Options" if available in item.meta_data
+                    if (item.meta_data && Array.isArray(item.meta_data)) {
+                        for (const meta of item.meta_data) {
+                            allItemsText.push(`${meta.key}: ${meta.value}`);
+                        }
+                    }
+                }
+
+                // 2. Source Text (Customer Note + Items)
+                const sourceText = JSON.stringify({
+                    note: order.customer_note,
+                    items: allItemsText
+                }, null, 2);
+
+                // --- UPSERT ---
                 await prisma.order.upsert({
                     where: { id: id },
-                    update: {},
+                    update: {
+                        // Optional: update status if changed remotely? 
+                        // For now we persist local status if it exists to avoid overwriting 'GENERATING'
+                    },
                     create: {
                         id: id,
                         customer_name: customerName,
                         template_key: templateKey,
                         source_text: sourceText,
-                        // AI Data is initially null, to be processed by /api/ai/process
-                        status: 'AI_READY',
-                        created_at: new Date()
+                        status: 'AI_READY', // Default for new import
+                        created_at: new Date(order.date_created)
                     }
                 });
 
                 result.added++;
             } catch (err) {
-                console.error(`Error processing order ${order.order_id}:`, err);
+                console.error(`Error processing order ${order.id}:`, err);
                 result.errors++;
             }
         }
 
         return NextResponse.json({ success: true, result });
+
     } catch (error) {
-        console.error('Sync failed:', error);
-        return NextResponse.json({ error: 'Sync failed' }, { status: 500 });
+        console.error('Woo Sync Failed:', error);
+        return NextResponse.json({ error: 'Sync failed: ' + (error as any).message }, { status: 502 });
     }
 }

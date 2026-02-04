@@ -53,12 +53,11 @@ export default function ClientOrderDetail() {
 
     const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    const handleSave = async (newStatus?: string) => {
+    const handleSave = async () => {
         setSaving(true);
         try {
             const payload: any = { ai_data: formData };
-            if (newStatus) payload.status = newStatus;
-
+            // PUT only updates data, no status change
             const res = await fetch(`/api/orders/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -68,16 +67,45 @@ export default function ClientOrderDetail() {
             if (res.ok) {
                 const updated = await res.json();
                 setOrder(updated);
-                if (newStatus === 'GENERATING') {
-                    alert('Objednávka bola odoslaná agentovi na generovanie!');
-                    router.push('/');
-                }
+                // Optional: Toast message "Uložené"
             } else {
                 alert('Chyba pri ukladaní');
             }
         } catch (error) {
             console.error(error);
             alert('Chyba pripojenia');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveToDropbox = async () => {
+        setSaving(true);
+        try {
+            // 1. First save current data
+            await handleSave();
+
+            // 2. Trigger Job
+            const res = await fetch('/api/agent/trigger-job', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: id })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success) {
+                    setOrder(data.order); // Should have status GENERATING
+                    alert('Objednávka bola pridaná do fronty pre Dropbox!');
+                    router.push('/');
+                }
+            } else {
+                const err = await res.json();
+                alert(`Chyba: ${err.error}`);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Nepodarilo sa spojiť so serverom');
         } finally {
             setSaving(false);
         }
@@ -118,11 +146,12 @@ export default function ClientOrderDetail() {
                         <Save className="w-4 h-4" /> Uložiť
                     </button>
                     <button
-                        onClick={() => handleSave('GENERATING')}
+                        onClick={handleSaveToDropbox}
                         disabled={saving || order.status === 'GENERATING'}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-bold shadow-sm flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold shadow-sm flex items-center gap-2 disabled:opacity-50"
                     >
-                        <Send className="w-4 h-4" /> Schváliť & Odoslať
+                        {saving && order.status !== 'GENERATING' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        {order.status === 'GENERATING' ? 'Odoslané agentovi' : 'Uložiť na Dropbox'}
                     </button>
                 </div>
             </div>

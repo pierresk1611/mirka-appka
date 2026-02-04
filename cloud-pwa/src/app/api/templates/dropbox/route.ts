@@ -1,0 +1,68 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Dropbox } from 'dropbox';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+    try {
+        // 1. Get Access Token from DB
+        const setting = await prisma.settings.findUnique({
+            where: { key: 'DROPBOX_ACCESS_TOKEN' }
+        });
+        const accessToken = setting?.value;
+
+        if (!accessToken) {
+            console.warn('Missing DROPBOX_ACCESS_TOKEN');
+            return NextResponse.json({ error: 'Missing Dropbox Token', templates: [] }, { status: 400 });
+        }
+
+        // 2. List Folders in /AutoDesign/TEMPLATES
+        const dbx = new Dropbox({ accessToken });
+        let folders: any[] = [];
+
+        try {
+            const response = await dbx.filesListFolder({ path: '/AutoDesign/TEMPLATES' });
+            // Filter only folders
+            folders = response.result.entries.filter(entry => entry['.tag'] === 'folder');
+        } catch (dbxErr: any) {
+            console.error('Dropbox API Error:', dbxErr);
+            return NextResponse.json({ error: 'Failed to fetch from Dropbox', details: dbxErr }, { status: 502 });
+        }
+
+        // 3. Sync to DB (TemplateConfig)
+        const syncedTemplates = [];
+        for (const folder of folders) {
+            const templateKey = folder.name; // ID according to folder name
+
+            // Check if exists
+            const existing = await prisma.templateConfig.findUnique({
+                where: { key: templateKey }
+            });
+
+            if (!existing) {
+                // Create new template entry
+                await prisma.templateConfig.create({
+                    data: {
+                        key: templateKey,
+                        manifest: '{}' // Empty manifest initially
+                    }
+                });
+                syncedTemplates.push({ key: templateKey, status: 'NEW' });
+            } else {
+                syncedTemplates.push({ key: templateKey, status: 'EXISTING' });
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            count: folders.length,
+            synced: syncedTemplates,
+            raw: folders
+        });
+
+    } catch (error) {
+        console.error('Dropbox Sync Error:', error);
+        return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+    }
+}

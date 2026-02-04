@@ -34,6 +34,7 @@ model Order {
 model TemplateConfig {
   key      String @id
   manifest String // JSON stringified layer mapping
+  status   String @default("READY")
 }
 
 model Settings {
