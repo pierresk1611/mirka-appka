@@ -14,8 +14,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         });
 
         // 2. Call Woo Plugin to Complete Order
-        const wooUrl = process.env.WOO_URL;
-        const wooKey = process.env.WOO_API_KEY;
+        // Fetch credentials from DB
+        const settings = await prisma.settings.findMany({
+            where: { key: { in: ['WOO_URL', 'WOO_API_KEY'] } }
+        });
+        const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
+        const wooKey = settings.find(s => s.key === 'WOO_API_KEY')?.value;
 
         if (wooUrl && wooKey) {
             try {
