@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
-import { Loader2, Save, Send, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Send, AlertTriangle, Box } from 'lucide-react';
 
 export default function OrderDetailView() {
     const router = useRouter();
@@ -140,21 +140,33 @@ export default function OrderDetailView() {
                         <p className="text-sm text-slate-500">Šablóna: <span className="font-mono font-bold text-slate-700">{order.template_key}</span></p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
+                    {/* Save JSON changes locally */}
                     <button
                         onClick={() => handleSave()}
                         disabled={saving}
-                        className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded text-sm font-medium hover:bg-slate-50 flex items-center gap-2"
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-md text-slate-700 font-medium hover:bg-gray-50 transition flex items-center gap-2"
                     >
-                        <Save className="w-4 h-4" /> Uložiť
+                        <Save className="w-4 h-4" /> Uložiť zmeny
                     </button>
+
+                    {/* Trigger Agent Job */}
                     <button
                         onClick={handleSaveToDropbox}
-                        disabled={saving || order.status === 'GENERATING'}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-bold shadow-sm flex items-center gap-2 disabled:opacity-50"
+                        disabled={order.status === 'GENERATING'}
+                        className={`px-4 py-2 rounded-md text-white font-medium shadow-sm transition flex items-center gap-2
+                            ${order.status === 'GENERATING' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+                        `}
                     >
-                        {saving && order.status !== 'GENERATING' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        {order.status === 'GENERATING' ? 'Odoslané agentovi' : 'Uložiť na Dropbox'}
+                        {order.status === 'GENERATING' ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> Odoslané agentovi...
+                            </>
+                        ) : (
+                            <>
+                                <Box className="w-4 h-4" /> Uložiť na Dropbox
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
