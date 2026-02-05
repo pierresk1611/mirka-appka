@@ -1,12 +1,6 @@
 "use client";
 
-import React from 'react';
-import AppLayout from '../../components/AppLayout';
-import { Palette } from 'lucide-react';
-
-"use client";
-
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppLayout from '../../components/AppLayout';
 import { Palette, Layers, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -77,7 +71,7 @@ export default function TemplatesPage() {
                             <div className="p-4 flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className={`text-xs font-bold px-2 py-0.5 rounded ${tmpl.status === 'SCANNING' ? 'bg-yellow-100 text-yellow-700 animate-pulse' :
-                                            tmpl.status === 'READY' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                        tmpl.status === 'READY' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                                         }`}>
                                         {tmpl.status || 'READY'}
                                     </span>
