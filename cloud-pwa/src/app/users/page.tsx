@@ -17,6 +17,8 @@ export default function UserManagement() {
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'OPERATOR' });
 
     // Fetch Users (unchanged)
     const fetchUsers = async () => {
