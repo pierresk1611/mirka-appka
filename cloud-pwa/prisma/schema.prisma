@@ -19,16 +19,19 @@ model User {
 }
 
 model Order {
-  id            Int      @id // Woo Order ID
-  customer_name String
-  template_key  String?
-  source_text   String   // Original text from Woo
-  ai_data       String?  // JSON stringified (Prisma SQLite doesn't support JSON type natively well, using String)
-  status        String   @default("PENDING") // PENDING, AI_READY, GENERATING, DONE, ERROR
-  preview_url   String?
-  agent_log     String?  // JSON stringified
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id               Int      @id // Woo Order ID
+  customer_name    String
+  product_name_raw String?
+  template_key     String?
+  source_text      String   // Original text from Woo
+  quantity         Int      @default(1)
+  material         String?
+  ai_data          String?  // JSON stringified
+  status           String   @default("PENDING") // PENDING, AI_READY, GENERATING, DONE, ERROR
+  preview_url      String?
+  agent_log        String?  // JSON stringified
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 }
 
 model TemplateConfig {

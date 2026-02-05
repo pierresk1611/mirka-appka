@@ -44,6 +44,7 @@ export function extractEPOData(metaString: string) {
         text: /(?:Text oznámenia|Text oznámení|Pozdrav|Vlastný text)[:\s]+([^|\n]+)/i,
         format: /(?:Formát|Rozmer)[:\s]+([^|\n]+)/i,
         material: /(?:Typ média|Materiál|Papier)[:\s]+([^|\n]+)/i,
+        quantity: /(?:Počet kusov|Množstvo|Množství)[:\s]+(\d+)/i,
     };
 
     for (const [key, regex] of Object.entries(patterns)) {

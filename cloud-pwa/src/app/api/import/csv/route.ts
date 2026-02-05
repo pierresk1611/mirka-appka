@@ -28,37 +28,36 @@ export async function POST(request: Request) {
             try {
                 const type = detectType(row);
 
-                if (type === 'ORDER') {
+                // Extract EPO from metadata
+                const metaData = row['Item Meta'] || row['Text oznámení'] || row['Content'] || '';
+                const epo = extractEPOData(metaData);
+
+                if (type === 'ORDER' || type === 'UNKNOWN') {
                     const id = parseInt(row['Order ID'] || row['ID']);
-                    if (isNaN(id)) continue;
+                    if (!isNaN(id)) {
+                        const customerName = row['Billing First Name']
+                            ? `${row['Billing First Name']} ${row['Billing Last Name']}`.trim()
+                            : (row['Customer Name'] || row['Title'] || 'Unknown Customer');
 
-                    const customerName = row['Billing First Name']
-                        ? `${row['Billing First Name']} ${row['Billing Last Name']}`.trim()
-                        : (row['Customer Name'] || 'Unknown Customer');
+                        await prisma.order.upsert({
+                            where: { id: id },
+                            update: {},
+                            create: {
+                                id: id,
+                                customer_name: customerName,
+                                product_name_raw: row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN',
+                                template_key: row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN', // Fallback
+                                source_text: epo.text || metaData,
+                                quantity: parseInt(epo.quantity || row['Meta: Počet kusov'] || row['Quantity'] || '1'),
+                                material: epo.material || row['Meta: Typ média'] || row['Material'] || 'Papier',
+                                status: 'AI_READY'
+                            }
+                        });
+                        result.ordersCreated++;
+                    }
+                }
 
-                    // Extract EPO from metadata
-                    const metaData = row['Item Meta'] || row['Text oznámení'] || '';
-                    const epo = extractEPOData(metaData);
-
-                    const sourceText = JSON.stringify({
-                        raw: row,
-                        extracted: epo
-                    }, null, 2);
-
-                    await prisma.order.upsert({
-                        where: { id: id },
-                        update: {},
-                        create: {
-                            id: id,
-                            customer_name: customerName,
-                            template_key: row['Item Name'] || row['Product Title'] || 'UNKNOWN',
-                            source_text: sourceText,
-                            status: 'AI_READY'
-                        }
-                    });
-                    result.ordersCreated++;
-                } else if (type === 'PRODUCT') {
-                    // Mapping Products to TemplateConfig as placeholders
+                if (type === 'PRODUCT') {
                     const key = row['Title'] || row['Name'];
                     if (key) {
                         await prisma.templateConfig.upsert({
