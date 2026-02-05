@@ -15,6 +15,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         ? "bg-blue-600 text-white shadow-md"
         : "text-slate-400 hover:bg-slate-800 hover:text-white";
 
+    const getPageTitle = () => {
+        switch (pathname) {
+            case '/': return 'Prehľad objednávok';
+            case '/users': return 'Správa užívateľov';
+            case '/templates': return 'Šablóny';
+            case '/history': return 'História';
+            case '/settings': return 'Nastavenia';
+            default: return 'AutoDesign Dashboard';
+        }
+    };
+
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     return (
