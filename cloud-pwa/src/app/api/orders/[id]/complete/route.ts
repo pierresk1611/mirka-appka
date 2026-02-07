@@ -5,49 +5,57 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await params;
+        const { id } = await params; // UUID
 
-        // 1. Update Local DB
-        const updatedOrder = await prisma.order.update({
-            where: { id: Number(id) },
-            data: { status: 'COMPLETED' }
-        });
+        try {
+            // 1. Fetch Order and linked Store
+            const order = await prisma.order.findUnique({
+                where: { id },
+                include: { store: true }
+            });
 
-        // 2. Call Woo Plugin to Complete Order
-        // Fetch credentials from DB
-        const settings = await prisma.settings.findMany({
-            where: { key: { in: ['WOO_URL', 'WOO_API_KEY'] } }
-        });
-        const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
-        const wooKey = settings.find(s => s.key === 'WOO_API_KEY')?.value;
-
-        if (wooUrl && wooKey) {
-            try {
-                console.log(`Closing order ${id} on WooCommerce...`);
-                // Calls endpoint in the new plugin structure: /wp-json/autodesign/v1/orders/{id}/complete
-                const res = await fetch(`${wooUrl}/wp-json/autodesign/v1/orders/${id}/complete`, {
-                    method: 'POST',
-                    headers: {
-                        'X-AutoDesign-Key': wooKey,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!res.ok) {
-                    const txt = await res.text();
-                    console.error('Woo Plugin Error:', txt);
-                    // We don't fail the whole request effectively, but log it.
-                } else {
-                    console.log('Woo Order Closed Successfully.');
-                }
-            } catch (err) {
-                console.error('Failed to call Woo Plugin:', err);
+            if (!order) {
+                return NextResponse.json({ error: 'Order not found' }, { status: 404 });
             }
-        }
 
-        return NextResponse.json({ success: true, order: updatedOrder });
+            // 2. Update Local DB
+            await prisma.order.update({
+                where: { id },
+                data: { status: 'COMPLETED' }
+            });
+
+            // 3. Call Woo Plugin to Complete Order using Store credentials
+            const store = order.store;
+
+            if (store.url && store.api_key) {
+                try {
+                    console.log(`Closing order ${order.woo_id} on WooCommerce (${store.name})...`);
+                    const res = await fetch(`${store.url}/wp-json/autodesign/v1/orders/${order.woo_id}/complete`, {
+                        method: 'POST',
+                        headers: {
+                            'X-AutoDesign-Key': store.api_key,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!res.ok) {
+                        const txt = await res.text();
+                        console.error('Woo Plugin Error:', txt);
+                    } else {
+                        console.log('Woo Order Closed Successfully.');
+                    }
+                } catch (err) {
+                    console.error('Failed to call Woo Plugin:', err);
+                }
+            }
+
+            return NextResponse.json({ success: true, message: 'Objednávka bola označená ako vybavená.' });
+        } catch (error) {
+            console.error('Order Complete Error:', error);
+            return NextResponse.json({ error: 'Failed to complete order' }, { status: 500 });
+        }
     } catch (error) {
-        console.error('Order Complete Error:', error);
-        return NextResponse.json({ error: 'Failed to complete order' }, { status: 500 });
+        console.error('Fatal API Error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

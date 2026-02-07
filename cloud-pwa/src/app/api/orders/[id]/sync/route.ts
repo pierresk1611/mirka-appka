@@ -10,89 +10,75 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id: idStr } = await params;
-    const id = parseInt(idStr);
+    const { id } = await params; // UUID
 
     try {
-        // 1. Fetch Credentials
-        const settings = await prisma.settings.findMany({
-            where: {
-                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS', 'OPENAI_API_KEY'] }
-            }
+        // 1. Fetch Order and its linked Store
+        const existingOrder = await prisma.order.findUnique({
+            where: { id },
+            include: { store: true }
         });
 
-        const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
-        const wooCk = settings.find(s => s.key === 'WOO_CK')?.value;
-        const wooCs = settings.find(s => s.key === 'WOO_CS')?.value;
-        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
-
-        if (!wooUrl || !wooCk || !wooCs) {
-            return NextResponse.json({ error: 'Missing Woo Credentials' }, { status: 500 });
+        if (!existingOrder) {
+            return NextResponse.json({ error: 'Order not found in PWA' }, { status: 404 });
         }
 
+        const store = existingOrder.store;
         const WooCommerce = new WooCommerceRestApi({
-            url: wooUrl,
-            consumerKey: wooCk,
-            consumerSecret: wooCs,
+            url: store.url,
+            consumerKey: store.consumer_key,
+            consumerSecret: store.consumer_secret,
             version: "wc/v3"
         });
 
-        // 2. Fetch specific order
-        const response = await WooCommerce.get(`orders/${id}`);
+        // 2. Fetch specific order from WooCommerce
+        const response = await WooCommerce.get(`orders/${existingOrder.woo_id}`);
         const order = response.data;
 
-        const customerName = `${order.billing.first_name} ${order.billing.last_name}`;
-        let templateKey = 'UNKNOWN';
-        let allItemsText = [];
-
+        // 3. Sync Items to OrderItem table
         for (const item of order.line_items) {
             const productName = item.name || '';
-            allItemsText.push(`Produkt: ${productName}`);
+            const allMetadata = item.meta_data.map((m: any) => `${m.key}: ${formatMetadataValue(m.key, m.value)}`).join('\n');
+            const sourceText = `Produkt: ${productName}\n${allMetadata}\nPoznámka: ${order.customer_note || ''}`;
+            const templateKey = matchTemplate(productName);
 
-            if (item.meta_data && Array.isArray(item.meta_data)) {
-                for (const meta of item.meta_data) {
-                    const formatted = formatMetadataValue(meta.key, meta.value);
-                    if (formatted) {
-                        allItemsText.push(`${meta.key}: ${formatted}`);
-                    }
-                }
-            }
-
-            const matchedKey = matchTemplate(productName);
-            if (matchedKey !== 'UNKNOWN') {
-                templateKey = matchedKey;
-            } else if (templateKey === 'UNKNOWN') {
-                templateKey = productName;
-            }
-        }
-
-        // --- NEW: Human Readable Source Text for AI ---
-        const sourceText = `Poznámka zákazníka: ${order.customer_note || 'Žiadna'}\n\nProdukty a možnosti:\n${allItemsText.join('\n')}`;
-
-        // 3. Force update in DB
-        const savedOrder = await prisma.order.update({
-            where: { id: id },
-            data: {
-                customer_name: customerName,
-                template_key: templateKey,
-                source_text: sourceText,
-                status: 'AI_READY' // Reset status to trigger AI again if needed
-            }
-        });
-
-        // 4. Trigger AI Processing immediately for this one
-        const parsedAiData = await parseOrderText(sourceText, templateKey, aiKey);
-        if (parsedAiData) {
-            await prisma.order.update({
-                where: { id: id },
-                data: {
-                    ai_data: JSON.stringify(parsedAiData),
+            const savedItem = await prisma.orderItem.upsert({
+                where: {
+                    id: `${existingOrder.id}-${item.id}` // Unique for this PWA order + Woo item
+                },
+                update: {
+                    product_name_raw: productName,
+                    template_key: templateKey,
+                    source_text: sourceText,
+                    quantity: item.quantity,
+                    status: 'AI_READY'
+                },
+                create: {
+                    id: `${existingOrder.id}-${item.id}`,
+                    order_id: existingOrder.id,
+                    woo_item_id: item.id,
+                    product_name_raw: productName,
+                    template_key: templateKey,
+                    source_text: sourceText,
+                    quantity: item.quantity,
                     status: 'AI_READY'
                 }
             });
+
+            // 4. Trigger AI Processing for this item
+            const aiData = await parseOrderText(sourceText, templateKey);
+            if (aiData) {
+                await prisma.orderItem.update({
+                    where: { id: savedItem.id },
+                    data: {
+                        ai_data: JSON.stringify(aiData),
+                        status: 'AI_READY'
+                    }
+                });
+            }
         }
 
-        return NextResponse.json({ success: true, order: savedOrder });
+        return NextResponse.json({ success: true, message: 'Objednávka bola aktualizovaná.' });
 
     } catch (error: any) {
         console.error('Order Re-sync Failed:', error);

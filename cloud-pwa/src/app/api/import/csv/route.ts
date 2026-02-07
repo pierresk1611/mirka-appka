@@ -34,54 +34,87 @@ export async function POST(request: Request) {
                 const epo = extractEPOData(metaData);
 
                 if (type === 'ORDER' || type === 'UNKNOWN') {
-                    const id = parseInt(row['Order ID'] || row['ID']);
-                    if (!isNaN(id)) {
+                    const wooId = parseInt(row['Order ID'] || row['ID']);
+                    if (!isNaN(wooId)) {
                         const customerName = row['Billing First Name']
                             ? `${row['Billing First Name']} ${row['Billing Last Name']}`.trim()
                             : (row['Customer Name'] || row['Title'] || 'Unknown Customer');
 
                         const productName = row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN';
 
+                        // Get or Create a default "CSV Import" store
+                        const store = await prisma.store.upsert({
+                            where: { id: 'csv-import-store' },
+                            update: {},
+                            create: {
+                                id: 'csv-import-store',
+                                name: 'CSV Import',
+                                url: 'localhost',
+                                consumer_key: 'csv',
+                                consumer_secret: 'csv'
+                            }
+                        });
+
                         // Template Matching Logic
                         let templateKey = 'UNKNOWN';
                         const lowerProductName = productName.toLowerCase();
+                        if (lowerProductName.includes('pivo')) templateKey = 'BIR_PIVO';
+                        else if (lowerProductName.includes('odtlač')) templateKey = 'FINGERPRINTS';
+                        else templateKey = productName;
 
-                        if (lowerProductName.includes('pivo')) {
-                            templateKey = 'BIR_PIVO';
-                        } else if (lowerProductName.includes('svadobn') || lowerProductName.includes('wedding')) {
-                            templateKey = 'WED_BASIC'; // Example fallback
-                        } else if (lowerProductName.includes('odtlač')) {
-                            templateKey = 'FINGERPRINTS';
-                        } else {
-                            templateKey = productName; // Fallback to product name as key
-                        }
-
+                        // 1. Create/Update Order
                         const savedOrder = await prisma.order.upsert({
-                            where: { id: id },
+                            where: {
+                                woo_id_store_id: {
+                                    woo_id: wooId,
+                                    store_id: store.id
+                                }
+                            },
+                            update: {
+                                customer_name: customerName,
+                                status: 'AI_READY'
+                            },
+                            create: {
+                                woo_id: wooId,
+                                store_id: store.id,
+                                customer_name: customerName,
+                                status: 'AI_READY'
+                            }
+                        });
+
+                        // 2. Create/Update OrderItem
+                        const quantity = parseInt(epo.quantity || row['Meta: Počet kusov'] || row['Quantity'] || '1');
+                        const material = epo.material || row['Meta: Typ média'] || row['Material'] || 'Papier';
+
+                        const savedItem = await prisma.orderItem.upsert({
+                            where: { id: `csv-${wooId}-${productName.replace(/[^a-z0-9]/gi, '')}` },
                             update: {
                                 template_key: templateKey,
                                 source_text: epo.text || metaData,
+                                quantity,
+                                material
                             },
                             create: {
-                                id: id,
-                                customer_name: customerName,
+                                id: `csv-${wooId}-${productName.replace(/[^a-z0-9]/gi, '')}`,
+                                order_id: savedOrder.id,
+                                woo_item_id: wooId, // Fake item ID for CSV
                                 product_name_raw: productName,
                                 template_key: templateKey,
                                 source_text: epo.text || metaData,
-                                quantity: parseInt(epo.quantity || row['Meta: Počet kusov'] || row['Quantity'] || '1'),
-                                material: epo.material || row['Meta: Typ média'] || row['Material'] || 'Papier',
+                                quantity,
+                                material,
                                 status: 'AI_READY'
                             }
                         });
 
                         // --- AI PROCESSING (Automatic) ---
-                        if (!savedOrder.ai_data || savedOrder.status === 'AI_READY') {
+                        if (!savedItem.ai_data) {
                             try {
-                                console.log(`AI Processing for Order #${id}...`);
+                                console.log(`AI Processing for Order Item ${savedItem.id}...`);
                                 const parsedAiData = await parseOrderText(epo.text || metaData, templateKey);
                                 if (parsedAiData) {
-                                    await prisma.order.update({
-                                        where: { id: id },
+                                    await prisma.orderItem.update({
+                                        where: { id: savedItem.id },
                                         data: {
                                             ai_data: JSON.stringify(parsedAiData),
                                             status: 'AI_READY'
@@ -89,7 +122,7 @@ export async function POST(request: Request) {
                                     });
                                 }
                             } catch (aiErr) {
-                                console.error(`AI extraction failed for Order #${id}:`, aiErr);
+                                console.error(`AI extraction failed for Order Item ${savedItem.id}:`, aiErr);
                             }
                         }
 
