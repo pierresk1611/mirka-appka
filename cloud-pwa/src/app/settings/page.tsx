@@ -17,6 +17,8 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testingWoo, setTestingWoo] = useState(false);
+    const [testingDropbox, setTestingDropbox] = useState(false);
+    const [syncingDropbox, setSyncingDropbox] = useState(false);
 
     // Fetch initial settings
     useEffect(() => {
@@ -87,6 +89,51 @@ export default function SettingsPage() {
             alert('❌ Chyba: Network Error');
         } finally {
             setTestingWoo(false);
+        }
+    };
+
+    const handleTestDropbox = async () => {
+        setTestingDropbox(true);
+        try {
+            // Test by listing just the root folder without syncing anything
+            const res = await fetch('/api/templates/dropbox?test=true');
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert(`✅ Dropbox Pripojený: Nájdených ${data.count} položiek.`);
+            } else {
+                alert(`❌ Chyba: ${data.error || 'Nepodarilo sa pripojiť k Dropboxu.'}`);
+            }
+        } catch (error) {
+            alert('❌ Chyba: Network Error');
+        } finally {
+            setTestingDropbox(false);
+        }
+    };
+
+    const handleSyncDropbox = async () => {
+        setSyncingDropbox(true);
+        try {
+            // 1. Save settings first to ensure token/path is current
+            const payload = Object.entries(config).map(([key, value]) => ({ key, value }));
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            // 2. Trigger sync
+            const res = await fetch('/api/templates/dropbox');
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                alert(`✅ Sync Dokončený: ${data.count} šablón pripravených.`);
+            } else {
+                alert(`❌ Chyba Syncu: ${data.error || 'Neznáma chyba'}`);
+            }
+        } catch (error) {
+            alert('❌ Chyba: Nepodarilo sa spojiť s API.');
+        } finally {
+            setSyncingDropbox(false);
         }
     };
 
@@ -183,13 +230,13 @@ export default function SettingsPage() {
                                 <Folder className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Dropbox & Agent</h3>
-                                <p className="text-sm text-gray-500">Cloud úložisko a lokálny agent.</p>
+                                <h3 className="text-lg font-bold text-gray-900">Dropbox API</h3>
+                                <p className="text-sm text-gray-500">Cloud synchronizácia šablón pre PWA.</p>
                             </div>
                         </div>
                         <div className="grid gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Dropbox Access Token (App)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Dropbox Access Token</label>
                                 <input
                                     name="DROPBOX_ACCESS_TOKEN"
                                     value={config.DROPBOX_ACCESS_TOKEN}
@@ -198,16 +245,38 @@ export default function SettingsPage() {
                                     placeholder="sl..."
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono"
                                 />
-                                <p className="text-xs text-gray-400 mt-1">Token pre PWA na čítanie šablón.</p>
+                                <p className="text-xs text-gray-400 mt-1">Získajte v Dropbox Console (App Console).</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Lokálna cesta (Dropbox Path)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Root cesta k šablónam</label>
                                 <input
                                     name="DROPBOX_PATH"
                                     value={config.DROPBOX_PATH}
                                     onChange={handleChange}
+                                    placeholder="/TEMPLATES"
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
                                 />
+                            </div>
+
+                            <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <button
+                                    type="button"
+                                    onClick={handleTestDropbox}
+                                    disabled={testingDropbox}
+                                    className="text-sm bg-white border border-gray-300 px-4 py-2 rounded font-medium shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+                                >
+                                    {testingDropbox ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4 text-blue-600" />}
+                                    Test Pripojenia
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSyncDropbox}
+                                    disabled={syncingDropbox}
+                                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded font-medium shadow-lg hover:bg-blue-700 flex items-center justify-center gap-2 disabled:bg-blue-300"
+                                >
+                                    {syncingDropbox ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    Synchronizovať Šablóny
+                                </button>
                             </div>
                         </div>
                     </div>

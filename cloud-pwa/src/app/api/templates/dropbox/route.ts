@@ -4,7 +4,7 @@ import { Dropbox } from 'dropbox';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         // 1. Get Access Token from DB
         const setting = await prisma.settings.findUnique({
@@ -17,17 +17,35 @@ export async function GET() {
             return NextResponse.json({ error: 'Missing Dropbox Token', templates: [] }, { status: 400 });
         }
 
-        // 2. List Folders in /AutoDesign/TEMPLATES
+        // 2. Get Root Path from DB
+        const pathSetting = await prisma.settings.findUnique({
+            where: { key: 'DROPBOX_PATH' }
+        });
+        let dropboxPath = pathSetting?.value || '/TEMPLATES';
+        if (!dropboxPath.startsWith('/')) dropboxPath = '/' + dropboxPath;
+
         const dbx = new Dropbox({ accessToken });
         let folders: any[] = [];
 
+        const { searchParams } = new URL(request.url);
+        const isTest = searchParams.get('test') === 'true';
+
         try {
-            const response = await dbx.filesListFolder({ path: '/AutoDesign/TEMPLATES' });
+            console.log(`Listing folders in Dropbox: ${dropboxPath}`);
+            const response = await dbx.filesListFolder({ path: dropboxPath });
             // Filter only folders
             folders = response.result.entries.filter(entry => entry['.tag'] === 'folder');
         } catch (dbxErr: any) {
             console.error('Dropbox API Error:', dbxErr);
-            return NextResponse.json({ error: 'Failed to fetch from Dropbox', details: dbxErr }, { status: 502 });
+            return NextResponse.json({ error: 'Failed to fetch from Dropbox. Check Token and Path.', details: dbxErr }, { status: 502 });
+        }
+
+        if (isTest) {
+            return NextResponse.json({
+                success: true,
+                count: folders.length,
+                message: 'Connection successful'
+            });
         }
 
         // 3. Sync to DB (TemplateConfig)
