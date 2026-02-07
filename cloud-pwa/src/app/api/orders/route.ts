@@ -17,13 +17,18 @@ export async function GET(request: Request) {
         const orders = await prisma.order.findMany({
             where,
             orderBy: { created_at: 'desc' },
-            select: {
-                id: true,
-                customer_name: true,
-                template_key: true,
-                status: true,
-                created_at: true,
-                preview_url: true
+            include: {
+                store: {
+                    select: { name: true }
+                },
+                items: {
+                    select: {
+                        id: true,
+                        product_name_raw: true,
+                        template_key: true,
+                        status: true
+                    }
+                }
             }
         });
 

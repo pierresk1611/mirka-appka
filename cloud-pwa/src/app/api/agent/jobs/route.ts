@@ -6,75 +6,102 @@ export const dynamic = 'force-dynamic';
 // GET: Agent si pýta prácu (Polling)
 export async function GET(request: Request) {
     try {
-        // Check Agent Secret (Simple Auth)
         const authHeader = request.headers.get('authorization');
-        const AGENT_SECRET = process.env.AGENT_SECRET_TOKEN || 'default_secret'; // Should be in env
+        const AGENT_SECRET = process.env.AGENT_SECRET_TOKEN || 'default_secret';
 
         if (authHeader !== `Bearer ${AGENT_SECRET}`) {
-            // Allow dev mode bypass if needed, but strictly enforce in prod
             if (process.env.NODE_ENV === 'production') {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
             }
         }
 
-        // 1. Find orders allowed for generation
-        const orderJobs = await prisma.order.findMany({
+        // 1. Find orders marked for generation
+        const orders = await prisma.order.findMany({
             where: { status: 'GENERATING' },
-            select: {
-                id: true,
-                template_key: true,
-                ai_data: true,
+            include: {
+                store: true,
+                items: {
+                    where: { status: 'GENERATING' }
+                }
             }
+        });
+
+        // Fetch all relevant template configs for these orders to get mappings
+        const templateKeys = Array.from(new Set(orders.flatMap(o => o.items.map(i => i.template_key)).filter(k => k !== null)));
+        const templateConfigs = await prisma.templateConfig.findMany({
+            where: { key: { in: templateKeys as string[] } }
+        });
+
+        const mappingMap = new Map();
+        templateConfigs.forEach(tc => {
+            if (tc.mappings) mappingMap.set(tc.key, JSON.parse(tc.mappings));
         });
 
         // 2. Find templates allowed for scanning
         const templateJobs = await prisma.templateConfig.findMany({
-            where: { status: 'SCANNING' },
-            select: {
-                key: true,
-                // manifest is what we want to update, but maybe we don't send it? or we send key.
-            }
+            where: { status: 'SCANNING' }
         });
 
         // Format Jobs
-        const formattedOrderJobs = orderJobs.map(job => ({
-            type: 'ORDER_GENERATE',
-            id: job.id,
-            template_key: job.template_key,
-            ai_data: job.ai_data ? JSON.parse(job.ai_data) : {},
+        const formattedOrderJobs = orders.map(order => ({
+            type: 'ORDER_BATCH',
+            id: order.id,
+            woo_id: order.woo_id,
+            customer_name: order.customer_name,
+            store_name: order.store.name,
+            items: order.items.map(item => ({
+                id: item.id,
+                template_key: item.template_key,
+                ai_data: item.ai_data ? JSON.parse(item.ai_data) : {},
+                product_name: item.product_name_raw,
+                mappings: item.template_key ? (mappingMap.get(item.template_key) || {}) : {}
+            }))
         }));
 
         const formattedTemplateJobs = templateJobs.map(job => ({
             type: 'TEMPLATE_SCAN',
-            id: job.key, // Use key as ID for template jobs
+            id: job.key,
             template_key: job.key
         }));
 
         return NextResponse.json({ jobs: [...formattedOrderJobs, ...formattedTemplateJobs] });
     } catch (error) {
+        console.error('Fetch jobs error:', error);
         return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
 }
 
-// POST: Vytvorenie jobu (UI -> Frontend trigger)
+// POST: Job completion or update from Agent
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { orderId } = body;
+        const { jobId, status, resultPath, error, type } = body;
 
-        if (!orderId) {
-            return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
+        if (!jobId) {
+            return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
         }
 
-        // Update status to GENERATING triggers the agent to pick it up
-        const updatedOrder = await prisma.order.update({
-            where: { id: Number(orderId) },
-            data: { status: 'GENERATING' }
-        });
+        if (type === 'ORDER_BATCH') {
+            // Update Order status
+            await prisma.order.update({
+                where: { id: jobId },
+                data: {
+                    status: status === 'completed' ? 'COMPLETED' : 'ERROR',
+                }
+            });
 
-        return NextResponse.json({ success: true, order: updatedOrder });
-    } catch (error) {
-        console.error('Job Create Error:', error);
-        return NextResponse.json({ error: 'Failed to create job' }, { status: 500 });
+            // Update all items of this order to match
+            await prisma.orderItem.updateMany({
+                where: { order_id: jobId, status: 'GENERATING' },
+                data: {
+                    status: status === 'completed' ? 'DONE' : 'ERROR'
+                }
+            });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error('Job result update error:', err);
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

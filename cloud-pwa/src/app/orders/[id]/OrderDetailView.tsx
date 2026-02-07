@@ -3,25 +3,41 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
-import { Loader2, Save, Send, AlertTriangle, Box } from 'lucide-react';
+import { Loader2, Save, Send, AlertTriangle, Box, Layers, User, Calendar, MapPin, Globe } from 'lucide-react';
+
+interface OrderItem {
+    id: string;
+    product_name_raw: string;
+    template_key: string;
+    source_text: string;
+    ai_data: string | null;
+    status: string;
+    preview_url?: string;
+}
+
+interface Order {
+    id: string;
+    woo_id: number;
+    customer_name: string;
+    status: string;
+    created_at: string;
+    store: { name: string };
+    items: OrderItem[];
+}
 
 export default function OrderDetailView() {
     const router = useRouter();
     const params = useParams();
-    const id = params?.id;
+    const id = params?.id as string;
 
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [syncing, setSyncing] = useState(false);
 
-    useEffect(() => { console.log('OrderDetailView Loaded - Version Blue Drop'); }, []);
-
-    // Editor State
-    interface FormData {
-        [key: string]: string;
-    }
-    const [formData, setFormData] = useState<FormData>({});
+    const [logs, setLogs] = useState<string[]>([]);
+    const [mappings, setMappings] = useState<{ [key: string]: string }>({});
+    const [availableLayers, setAvailableLayers] = useState<string[]>([]); // Mocked or scanned
+    const [showMapping, setShowMapping] = useState(false);
 
     const fetchOrder = async () => {
         try {
@@ -29,13 +45,28 @@ export default function OrderDetailView() {
             if (res.ok) {
                 const data = await res.json();
                 setOrder(data);
-                // Parse AI Data
-                if (data.ai_data) {
+
+                // Initialize forms
+                const forms: any = {};
+                data.items.forEach((item: OrderItem) => {
                     try {
-                        const parsed = JSON.parse(data.ai_data);
-                        setFormData(parsed);
+                        forms[item.id] = item.ai_data ? JSON.parse(item.ai_data) : {};
                     } catch (e) {
-                        console.error("Failed to parse AI data", e);
+                        forms[item.id] = {};
+                    }
+                });
+                setItemForms(forms);
+
+                if (!activeItemId && data.items.length > 0) {
+                    setActiveItemId(data.items[0].id);
+                }
+
+                // Fetch mappings for the template of the first item
+                if (data.items.length > 0) {
+                    const mapRes = await fetch(`/api/templates/${data.items[0].template_key}/mapping`);
+                    if (mapRes.ok) {
+                        const mapData = await mapRes.json();
+                        setMappings(mapData.mappings ? JSON.parse(mapData.mappings) : {});
                     }
                 }
             } else {
@@ -49,64 +80,75 @@ export default function OrderDetailView() {
         }
     };
 
-    // Fetch Order
-    useEffect(() => {
-        if (!id) return;
-        fetchOrder();
-    }, [id, router]);
-
-    const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-    const handleForceSync = async () => {
-        setSyncing(true);
+    const fetchLogs = async () => {
         try {
-            const res = await fetch(`/api/orders/${id}/sync`, { method: 'POST' });
+            const res = await fetch('/api/agent/logs');
             if (res.ok) {
-                await fetchOrder();
-                alert('Dáta boli úspešne premazané a znova načítané z WooCommerce.');
-            } else {
-                alert('Sync zlyhal.');
+                const data = await res.json();
+                setLogs(data.logs);
             }
+        } catch (e) { }
+    };
+
+    useEffect(() => {
+        if (id) {
+            fetchOrder();
+            const interval = setInterval(fetchLogs, 3000);
+            return () => clearInterval(interval);
+        }
+    }, [id]);
+
+    const handleFieldChange = (itemId: string, field: string, value: string) => {
+        setItemForms(prev => ({
+            ...prev,
+            [itemId]: { ...prev[itemId], [field]: value }
+        }));
+    };
+
+    const handleSaveMapping = async () => {
+        if (!activeItem) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/templates/${activeItem.template_key}/mapping`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mappings })
+            });
+            if (res.ok) alert('Mapovanie vrstiev bolo uložené pre túto šablónu.');
         } catch (e) {
-            alert('Chyba pripojenia.');
+            alert('Chyba pri ukladaní mapovania');
         } finally {
-            setSyncing(false);
+            setSaving(false);
         }
     };
 
-    const handleSave = async () => {
+    const handleMappingChange = (systemKey: string, psdLayer: string) => {
+        setMappings(prev => ({ ...prev, [psdLayer]: systemKey }));
+    };
+
+    const handleSaveItem = async (itemId: string) => {
         setSaving(true);
         try {
-            const payload: any = { ai_data: formData };
-            // PUT only updates data, no status change
             const res = await fetch(`/api/orders/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    itemId,
+                    ai_data: itemForms[itemId]
+                })
             });
-
-            if (res.ok) {
-                const updated = await res.json();
-                setOrder(updated);
-                // Optional: Toast message "Uložené"
-            } else {
-                alert('Chyba pri ukladaní');
-            }
+            if (res.ok) console.log('Item saved');
+            else alert('Chyba pri ukladaní položky');
         } catch (error) {
-            console.error(error);
             alert('Chyba pripojenia');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleSaveToDropbox = async () => {
+    const handleTriggerAll = async () => {
         setSaving(true);
         try {
-            // 1. First save current data
-            await handleSave();
-
-            // 2. Trigger Job
             const res = await fetch('/api/agent/trigger-job', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -114,173 +156,217 @@ export default function OrderDetailView() {
             });
 
             if (res.ok) {
-                const data = await res.json();
-                if (data.success) {
-                    setOrder(data.order); // Should have status GENERATING
-                    alert('Objednávka bola pridaná do fronty pre Dropbox!');
-                    router.push('/');
-                }
+                alert('Celá sada bola odoslaná na spracovanie do Dropboxu!');
+                router.push('/');
             } else {
                 const err = await res.json();
                 alert(`Chyba: ${err.error}`);
             }
         } catch (error) {
-            console.error(error);
-            alert('Nepodarilo sa spojiť so serverom');
+            alert('Chyba pripojenia');
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) {
-        return (
-            <AppLayout>
-                <div className="flex justify-center items-center h-full">
-                    <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-                </div>
-            </AppLayout>
-        );
+    if (loading || !order) {
+        return <AppLayout><div className="flex justify-center items-center h-full"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div></AppLayout>;
     }
+
+    const activeItem = order.items.find(i => i.id === activeItemId);
+    const activeFormData = activeItemId ? itemForms[activeItemId] : {};
+
+    // System keys from AI results to map
+    const systemKeys = Object.keys(activeFormData);
 
     return (
         <AppLayout>
-            {/* Top Bar */}
-            <div className="flex justify-between items-center mb-6 pb-4 border-b">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.back()} className="text-slate-500 hover:bg-slate-200 p-2 rounded-full transition">← Späť</button>
-                    <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            Objednávka #{id}
-                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">
-                                {order.status}
-                            </span>
-                            <span className="bg-purple-100 text-purple-700 text-[10px] px-1 rounded border border-purple-200">v3.2</span>
-                        </h1>
-                        <p className="text-sm text-slate-500">Šablóna: <span className="font-mono font-bold text-slate-700">{order.template_key}</span></p>
+            {/* Header Area */}
+            <div className="bg-white border-b border-gray-200 -mx-8 -mt-8 px-8 py-6 mb-8 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => router.push('/')} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-white hover:shadow transition">←</button>
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Objednávka <span className="text-blue-600">#{order.woo_id}</span></h1>
+                                <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-100 uppercase tracking-widest">{order.store.name}</span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 font-medium">
+                                <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {order.customer_name}</span>
+                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(order.created_at).toLocaleDateString('sk-SK')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowMapping(!showMapping)}
+                            className={`px-4 py-2 rounded-xl font-bold border transition flex items-center gap-2 ${showMapping ? 'bg-orange-600 border-orange-600 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-600 hover:bg-gray-50'}`}
+                        >
+                            <Layers className="w-4 h-4" /> Smart Mapping
+                        </button>
+                        <button
+                            onClick={handleTriggerAll}
+                            disabled={saving}
+                            className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-xl hover:bg-slate-800 transition flex items-center gap-2"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Box className="w-4 h-4" />} Generovať Celú Sadu
+                        </button>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    {/* Re-sync button */}
-                    <button
-                        onClick={handleForceSync}
-                        disabled={syncing}
-                        className="px-4 py-2 bg-slate-100 border border-slate-300 rounded-md text-slate-600 font-medium hover:bg-slate-200 transition flex items-center gap-2"
-                    >
-                        {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Vynútiť Sync
-                    </button>
 
-                    {/* Save JSON changes locally */}
-                    <button
-                        onClick={() => handleSave()}
-                        disabled={saving}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-md text-slate-700 font-medium hover:bg-gray-50 transition flex items-center gap-2"
-                    >
-                        <Save className="w-4 h-4" /> Uložiť zmeny
-                    </button>
-
-                    {/* Trigger Agent Job */}
-                    <button
-                        onClick={handleSaveToDropbox}
-                        disabled={order.status === 'GENERATING'}
-                        className={`px-4 py-2 rounded-md text-white font-medium shadow-sm transition flex items-center gap-2
-                            ${order.status === 'GENERATING' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
-                        `}
-                    >
-                        {order.status === 'GENERATING' ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" /> Odoslané agentovi...
-                            </>
-                        ) : (
-                            <>
-                                <Box className="w-4 h-4" /> Uložiť na Dropbox
-                            </>
-                        )}
-                    </button>
+                {/* Sub-Tabs for Items */}
+                <div className="flex gap-2 mt-8">
+                    {order.items.map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveItemId(item.id)}
+                            className={`px-4 py-2 rounded-t-lg text-xs font-bold uppercase tracking-wider border-x border-t transition-all
+                                ${activeItemId === item.id
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-[0_-4px_10px_rgba(37,99,235,0.2)]'
+                                    : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-white'}
+                            `}
+                        >
+                            {item.product_name_raw}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* 3-Column Layout */}
-            <div className="flex flex-col md:flex-row gap-6 md:h-[calc(100vh-200px)]">
+            {/* Main Content: Tabs/Editor/Preview */}
+            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-420px)]">
 
-                {/* 1. Source */}
-                <div className="w-full md:w-1/4 bg-white border border-gray-200 rounded-xl flex flex-col shadow-sm">
-                    <div className="p-3 bg-gray-50 border-b font-semibold text-xs text-slate-500 uppercase">Text zákazníka (Woo)</div>
-                    <div className="p-4 flex-1 overflow-y-auto bg-yellow-50 font-mono text-sm text-slate-700 whitespace-pre-wrap">
-                        {(() => {
-                            try {
-                                const parsed = JSON.parse(order.source_text);
-                                return JSON.stringify(parsed, null, 2);
-                            } catch {
-                                return order.source_text;
-                            }
-                        })()}
-                    </div>
+                {/* 1. Source Text or Mapping */}
+                <div className="w-full lg:w-1/4 flex flex-col bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-inner">
+                    {showMapping ? (
+                        <div className="flex flex-col h-full">
+                            <div className="px-4 py-3 border-b border-orange-200 bg-orange-50 flex items-center justify-between text-[10px] font-black uppercase text-orange-600 tracking-widest">
+                                <div className="flex items-center gap-2"><Layers className="w-3 h-3" /> Smart Mapping (PSD)</div>
+                                <button onClick={handleSaveMapping} className="text-orange-700 hover:underline">Uložiť</button>
+                            </div>
+                            <div className="p-4 flex-1 overflow-y-auto space-y-4">
+                                <p className="text-[10px] text-orange-600 font-bold leading-tight bg-orange-100 p-2 rounded">
+                                    Priraďte detegované vrstvy z Photoshopu k systémovým kľúčom.
+                                </p>
+                                {systemKeys.map(key => (
+                                    <div key={key} className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{key}</label>
+                                        <input
+                                            placeholder="Názov vrstvy v PSD..."
+                                            value={Object.keys(mappings).find(k => mappings[k] === key) || ''}
+                                            onChange={(e) => handleMappingChange(key, e.target.value)}
+                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded text-xs font-mono"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="px-4 py-3 border-b border-slate-200 bg-slate-100/50 flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                <Globe className="w-3 h-3" /> Pôvodný Text: {activeItem?.product_name_raw}
+                            </div>
+                            <div className="p-5 flex-1 overflow-y-auto font-mono text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {activeItem?.source_text}
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* 2. Editor */}
-                <div className="w-full md:w-1/3 bg-white border border-blue-200 rounded-xl flex flex-col shadow-md ring-1 ring-blue-100">
-                    <div className="p-3 bg-blue-600 text-white rounded-t-xl font-semibold text-xs uppercase flex justify-between">
-                        <span>Editor Polí (JSON)</span>
-                        {saving && <span className="animate-pulse">Ukladám...</span>}
+                <div className="w-full lg:w-1/3 flex flex-col bg-white border-2 border-blue-500/20 rounded-2xl overflow-hidden shadow-2xl relative">
+                    <div className="px-4 py-3 bg-blue-600 text-white flex justify-between items-center shadow-lg">
+                        <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            Editor Dát: {activeItem?.template_key}
+                        </span>
+                        <button
+                            onClick={() => activeItemId && handleSaveItem(activeItemId)}
+                            disabled={saving}
+                            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition flex items-center gap-1"
+                        >
+                            <Save className="w-3 h-3" /> Uložiť
+                        </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {Object.keys(formData).length === 0 ? (
-                            <div className="text-center mt-10 space-y-4 px-6">
-                                <p className="text-gray-400">
-                                    {order.status === 'AI_READY' || order.status === 'PENDING'
-                                        ? '⏳ AI práve spracováva dáta objednávky...'
-                                        : '❌ Žiadne AI dáta nenájdené.'}
-                                </p>
-                                <button
-                                    onClick={handleForceSync}
-                                    className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 transition"
-                                >
-                                    Skúsiť Sync znova
-                                </button>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        {systemKeys.length === 0 ? (
+                            <div className="text-center py-20 opacity-10">
+                                <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
                             </div>
                         ) : (
-                            Object.keys(formData).map((key) => (
-                                <div key={key}>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">{key}</label>
+                            systemKeys.map(key => (
+                                <div key={key} className="group">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-tighter group-hover:text-blue-500 transition">
+                                        {key}
+                                    </label>
                                     {key === 'body_full' || key.includes('text') ? (
                                         <textarea
-                                            name={key}
-                                            value={formData[key]}
-                                            onChange={handleChange}
-                                            className="w-full p-2 border rounded h-32 text-sm font-mono"
+                                            value={activeFormData[key]}
+                                            onChange={(e) => activeItemId && handleFieldChange(activeItemId, key, e.target.value)}
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition h-32"
                                         />
                                     ) : (
                                         <input
-                                            name={key}
-                                            value={formData[key]}
-                                            onChange={handleChange}
-                                            className="w-full p-2 border rounded font-medium text-slate-800"
+                                            type="text"
+                                            value={activeFormData[key]}
+                                            onChange={(e) => activeItemId && handleFieldChange(activeItemId, key, e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition"
                                         />
                                     )}
                                 </div>
                             ))
                         )}
                     </div>
-                    <div className="p-4 border-t bg-gray-50 text-xs text-gray-400 text-center">
-                        Zmeny sa ukladajú tlačidlom "Uložiť" hore.
-                    </div>
                 </div>
 
                 {/* 3. Preview */}
-                <div className="flex-1 bg-slate-200 rounded-xl flex flex-col overflow-hidden relative border border-slate-300">
-                    <div className="p-3 bg-slate-300 border-b font-semibold text-xs text-slate-600 uppercase">Výstup (Preview)</div>
-                    <div className="flex-1 flex items-center justify-center p-4 bg-gray-300">
-                        {order.preview_url ? (
-                            <img src={order.preview_url} alt="Preview" className="max-w-full max-h-full shadow-lg" />
+                <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative group">
+                    <div className="absolute top-4 left-4 z-10">
+                        <span className="bg-slate-900/80 text-white text-[9px] font-black uppercase px-2 py-1 rounded backdrop-blur border border-slate-700 tracking-widest">
+                            Náhľad Výstupu
+                        </span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
+                        {activeItem?.preview_url ? (
+                            <img
+                                src={activeItem.preview_url}
+                                alt="Preview"
+                                className="max-w-full max-h-full shadow-2xl rounded-sm border-2 border-white/20 transform group-hover:scale-105 transition duration-1000"
+                            />
                         ) : (
-                            <div className="bg-white/50 shadow-inner p-8 rounded-xl text-center text-gray-400">
-                                <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p>Náhľad zatiaľ nie je vygenerovaný.</p>
-                                <p className="text-xs mt-2">Odoslaním agentovi sa tu objaví PDF/JPG.</p>
+                            <div className="text-center text-slate-600">
+                                <div className="w-12 h-12 bg-slate-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Loader2 className="w-6 h-6 opacity-20 animate-spin" />
+                                </div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest opacity-30">čakanie na agenta...</p>
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            {/* LIVE CONSOLE */}
+            <div className="mt-6 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+                <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-2">Console: Local Agent MAC-OFFICE</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span className="text-[9px] text-green-500 font-bold uppercase">LIVE</span>
+                    </div>
+                </div>
+                <div className="p-4 h-40 overflow-y-auto font-mono text-[11px] leading-relaxed">
+                    {logs.map((log, i) => (
+                        <div key={i} className={`mb-1 ${log.includes('ERROR') ? 'text-red-400' : log.includes('SUCCESS') ? 'text-green-400' : 'text-slate-400'}`}>
+                            <span className="opacity-30 mr-2">{'>'}</span> {log}
+                        </div>
+                    ))}
+                    {logs.length === 0 && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
                 </div>
             </div>
         </AppLayout>

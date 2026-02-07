@@ -12,10 +12,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
         }
 
-        // Update status to GENERATING
-        // This implicitly signals the Local Agent (via GET /api/agent/jobs) to pick it up
+        // Update Order status to GENERATING
         const updatedOrder = await prisma.order.update({
-            where: { id: Number(orderId) },
+            where: { id: orderId },
+            data: { status: 'GENERATING' }
+        });
+
+        // ALSO update all associated items to GENERATING
+        await prisma.orderItem.updateMany({
+            where: { order_id: orderId },
             data: { status: 'GENERATING' }
         });
 

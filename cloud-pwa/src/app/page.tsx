@@ -5,12 +5,21 @@ import AppLayout from '../components/AppLayout';
 import Link from 'next/link';
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
-interface Order {
-  id: number;
-  customer_name: string;
+interface OrderItem {
+  id: string;
+  product_name_raw: string;
   template_key: string;
   status: string;
+}
+
+interface Order {
+  id: string; // PWA UUID
+  woo_id: number;
+  customer_name: string;
+  status: string;
   created_at: string;
+  store: { name: string };
+  items: OrderItem[];
 }
 
 export default function Dashboard() {
@@ -52,93 +61,107 @@ export default function Dashboard() {
     }
   };
 
-  // Stats Calculation
+  // Stats Calculation based on items
+  const allItems = orders.flatMap(o => o.items);
   const stats = {
-    pending: orders.filter(o => o.status === 'PENDING' || o.status === 'AI_READY').length,
-    processing: orders.filter(o => o.status === 'GENERATING').length,
-    done: orders.filter(o => o.status === 'DONE').length,
-    error: orders.filter(o => o.status === 'ERROR').length,
+    pending: allItems.filter(i => i.status === 'PENDING' || i.status === 'AI_READY').length,
+    processing: allItems.filter(i => i.status === 'GENERATING').length,
+    done: allItems.filter(i => i.status === 'DONE').length,
+    error: allItems.filter(i => i.status === 'ERROR').length,
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'AI_READY': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium border border-blue-200 inline-flex items-center gap-1">🤖 AI Hotovo</span>;
-      case 'GENERATING': return <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-full text-xs font-medium border border-orange-200 inline-flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Generujem...</span>;
-      case 'DONE': return <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200 inline-flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Hotovo</span>;
-      case 'ERROR': return <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium border border-red-200 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Chyba</span>;
-      default: return <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium">Čaká...</span>;
+      case 'AI_READY': return <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100 uppercase">AI Hotovo</span>;
+      case 'GENERATING': return <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold border border-orange-100 uppercase animate-pulse">Generujem</span>;
+      case 'DONE': return <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[10px] font-bold border border-green-100 uppercase">Hotovo</span>;
+      case 'ERROR': return <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold border border-red-100 uppercase">Chyba</span>;
+      default: return <span className="bg-gray-50 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold border border-gray-100 uppercase">Čaká</span>;
     }
   };
-
-  // Helper for safe ID link
-  const getLink = (id: number) => `/orders/${id}`;
 
   return (
     <AppLayout>
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-slate-500 text-sm font-medium uppercase">Čaká na kontrolu</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Položky: Čaká</p>
           <p className="text-3xl font-bold text-blue-600 mt-1">{stats.pending}</p>
         </div>
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-slate-500 text-sm font-medium uppercase">Spracováva sa</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Spracováva sa</p>
           <p className="text-3xl font-bold text-orange-500 mt-1">{stats.processing}</p>
         </div>
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-slate-500 text-sm font-medium uppercase">Hotovo</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Hotovo</p>
           <p className="text-3xl font-bold text-green-600 mt-1">{stats.done}</p>
         </div>
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-slate-500 text-sm font-medium uppercase">Chyby</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Chyby</p>
           <p className="text-3xl font-bold text-red-500 mt-1">{stats.error}</p>
         </div>
       </div>
 
       {/* ORDERS TABLE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="font-bold text-lg">Aktuálne objednávky</h2>
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <h2 className="font-bold text-lg text-slate-800">Aktuálne objednávky</h2>
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1 disabled:opacity-50"
+            className="text-sm bg-white border border-gray-200 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-50 flex items-center gap-2 transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Aktualizujem...' : 'Obnoviť zoznam'}
+            <RefreshCw className={`w-4 h-4 text-blue-600 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Aktualizujem...' : 'Vynútiť Sync zo všetkých webov'}
           </button>
         </div>
 
         {loading ? (
-          <div className="p-10 flex justify-center text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin" />
+          <div className="p-20 flex justify-center text-slate-300">
+            <Loader2 className="w-10 h-10 animate-spin" />
           </div>
         ) : (
           <>
-            {/* DESKTOP TABLE */}
             <table className="hidden md:table w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 text-slate-500 text-xs uppercase tracking-wider border-b">
-                  <th className="p-4 font-semibold">Objednávka</th>
-                  <th className="p-4 font-semibold">Zákazník</th>
-                  <th className="p-4 font-semibold">Šablóna (Key)</th>
-                  <th className="p-4 font-semibold">Stav spracovania</th>
-                  <th className="p-4 font-semibold text-right">Akcia</th>
+                <tr className="bg-gray-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b">
+                  <th className="p-4">Zdroj</th>
+                  <th className="p-4">ID</th>
+                  <th className="p-4">Zákazník</th>
+                  <th className="p-4">Dátum</th>
+                  <th className="p-4">Položky v sade</th>
+                  <th className="p-4 text-right">Akcia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {orders.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-slate-400">Žiadne objednávky. Kliknite na "Obnoviť zoznam".</td></tr>
+                  <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic">Žiadne objednávky. Kliknite na "Sync".</td></tr>
                 ) : orders.map(order => (
-                  <tr key={order.id} className="hover:bg-blue-50 transition border-l-4 border-transparent hover:border-blue-500">
-                    <td className="p-4 font-medium text-slate-900">#{order.id}</td>
-                    <td className="p-4 font-medium">{order.customer_name}</td>
-                    <td className="p-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono font-bold">{order.template_key || 'N/A'}</span></td>
-                    <td className="p-4">{getStatusBadge(order.status)}</td>
+                  <tr key={order.id} className="hover:bg-blue-50/50 transition">
+                    <td className="p-4">
+                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold border border-blue-100">
+                        {order.store.name}
+                      </span>
+                    </td>
+                    <td className="p-4 font-bold text-slate-900 font-mono">#{order.woo_id}</td>
+                    <td className="p-4 font-medium text-slate-700">{order.customer_name}</td>
+                    <td className="p-4 text-xs text-slate-500">
+                      {new Date(order.created_at).toLocaleDateString('sk-SK')}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        {order.items.map(item => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            {getStatusBadge(item.status)}
+                            <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.product_name_raw}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
                     <td className="p-4 text-right">
                       <Link href={`/orders/${order.id}`}>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition shadow-sm font-medium text-xs">
-                          Skontrolovať
+                        <button className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition shadow-sm font-bold text-xs">
+                          Upraviť Sadu
                         </button>
                       </Link>
                     </td>
@@ -147,31 +170,33 @@ export default function Dashboard() {
               </tbody>
             </table>
 
-            {/* MOBILE VIEW (CARDS) */}
+            {/* MOBILE VIEW */}
             <div className="md:hidden space-y-4 p-4 bg-gray-50">
-              {orders.length === 0 ? (
-                <div className="text-center text-slate-400 p-8">Žiadne objednávky.</div>
-              ) : orders.map((order) => (
+              {orders.map((order) => (
                 <div key={order.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <span className="text-lg font-bold text-slate-800">#{order.id}</span>
-                      <div className="text-sm text-slate-500">{order.customer_name}</div>
+                      <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">{order.store.name}</div>
+                      <span className="text-lg font-bold text-slate-800">#{order.woo_id}</span>
+                      <div className="text-sm font-medium text-slate-500">{order.customer_name}</div>
                     </div>
-                    {/* Status Badge */}
-                    {getStatusBadge(order.status)}
+                    <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                      {new Date(order.created_at).toLocaleDateString('sk-SK')}
+                    </div>
                   </div>
 
-                  <div className="mb-4">
-                    <p className="text-xs text-slate-400 uppercase font-bold">Šablóna</p>
-                    <p className="font-mono text-bold text-slate-700 bg-gray-100 px-2 py-1 rounded inline-block mt-1 text-sm">
-                      {order.template_key || 'N/A'}
-                    </p>
+                  <div className="space-y-2 mb-6 bg-gray-50 p-3 rounded-lg">
+                    {order.items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-700 truncate">{item.product_name_raw}</span>
+                        {getStatusBadge(item.status)}
+                      </div>
+                    ))}
                   </div>
 
                   <Link href={`/orders/${order.id}`} className="block">
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-sm active:bg-blue-700 flex justify-center items-center gap-2">
-                      Skontrolovať <CheckCircle className="w-4 h-4" />
+                    <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800">
+                      Otvoriť Sadu
                     </button>
                   </Link>
                 </div>
@@ -180,6 +205,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-    </AppLayout >
+    </AppLayout>
   );
 }

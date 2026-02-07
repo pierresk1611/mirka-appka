@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET: Detail objednávky
+// GET: Detail objednávky s položkami
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const orderId = parseInt(id);
 
         const order = await prisma.order.findUnique({
-            where: { id: orderId }
+            where: { id: id },
+            include: {
+                store: true,
+                items: {
+                    orderBy: { woo_item_id: 'asc' }
+                }
+            }
         });
 
         if (!order) {
@@ -21,25 +26,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 }
 
-// PUT: Update AI Data (Manuálny zásah operátora)
+// PUT: Update Order Item AI Data
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await params;
-        const orderId = parseInt(id);
+        const { id } = await params; // Order ID (UUID)
         const body = await request.json();
-        const { ai_data, status } = body;
+        const { itemId, ai_data, status } = body;
+
+        if (!itemId) {
+            return NextResponse.json({ error: 'Missing itemId' }, { status: 400 });
+        }
 
         const dataToUpdate: any = {};
-        if (ai_data) dataToUpdate.ai_data = JSON.stringify(ai_data); // Ensure stringified
+        if (ai_data) dataToUpdate.ai_data = JSON.stringify(ai_data);
         if (status) dataToUpdate.status = status;
 
-        const updatedOrder = await prisma.order.update({
-            where: { id: orderId },
+        const updatedItem = await prisma.orderItem.update({
+            where: { id: itemId },
             data: dataToUpdate
         });
 
-        return NextResponse.json(updatedOrder);
+        return NextResponse.json(updatedItem);
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+        console.error('Update item failed:', error);
+        return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
 }

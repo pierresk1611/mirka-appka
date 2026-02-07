@@ -8,35 +8,51 @@ datasource db {
   directUrl = "postgres://bed3eba2177c06ad46c038a6a153131b9d5953ad99f349553605a2a6805d2145:sk_4o7eyi1jfZwuacSU5OaSJ@db.prisma.io:5432/postgres?sslmode=require"
 }
 
-model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password_hash String
-  role          String
-  status        String   @default("ACTIVE")
-  created_at    DateTime @default(now())
+model Store {
+  id              String   @id @default(uuid())
+  name            String
+  url             String
+  consumer_key    String
+  consumer_secret String
+  api_key         String?  // X-AutoDesign-Key for plugin
+  orders          Order[]
+  created_at      DateTime @default(now())
 }
 
 model Order {
-  id               Int      @id
-  customer_name    String
+  id            String      @id @default(uuid()) // Internal PWA ID
+  woo_id        Int         // WooCommerce Order ID
+  store_id      String
+  store         Store       @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  customer_name String
+  status        String      @default("PENDING")
+  created_at    DateTime    @default(now()) // Original Woo order date
+  updated_at    DateTime    @updatedAt
+  items         OrderItem[]
+
+  @@unique([woo_id, store_id])
+}
+
+model OrderItem {
+  id               String  @id @default(uuid())
+  order_id         String
+  order            Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  woo_item_id      Int
+  product_name_raw String
   template_key     String?
-  source_text      String
-  ai_data          String?
-  status           String   @default("PENDING")
+  source_text      String? // Context for AI
+  ai_data          String? // JSON results
   preview_url      String?
   agent_log        String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
   material         String?
-  product_name_raw String?
-  quantity         Int      @default(1)
+  quantity         Int     @default(1)
+  status           String  @default("PENDING")
 }
 
 model TemplateConfig {
   key      String @id
   manifest String
+  mappings String? // JSON: { "Layer Name": "SYSTEM_KEY" }
   status   String @default("READY")
 }
 
