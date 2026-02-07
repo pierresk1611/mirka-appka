@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import BIR_PIVO from '@/components/preview-templates/BIR_PIVO';
 
-export const runtime = 'edge';
+// Note: Removed 'edge' runtime because Prisma requires Node.js runtime
 
 async function generatePreview(itemId: string) {
     // Fetch order item data
