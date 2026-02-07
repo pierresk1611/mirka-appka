@@ -50,36 +50,45 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
 
         // Ensure body_full exists as a fallback if AI missed it
         if (!parsed.body_full) {
-            parsed.body_full = text.substring(0, 100) + '...';
+            parsed.body_full = "Fallback: " + text.substring(0, 200) + '...';
         }
 
         return parsed;
 
-    } catch (error) {
-        console.error('AI Processing Error:', error);
+    } catch (error: any) {
+        console.error('--- AI Processing Error ---');
+        if (error.response) {
+            console.error('Status:', error.response.status);
+            console.error('Data:', error.response.data);
+        } else {
+            console.error('Message:', error.message);
+        }
         return mockParse(text, templateKey); // Fallback
     }
 }
 
 function mockParse(text: string, templateKey: string) {
-    // Simple heuristic fallback for development/testing without API key
-    let displayContent = text;
-    try {
-        const parsed = JSON.parse(text);
-        if (parsed.items && Array.isArray(parsed.items)) {
-            displayContent = parsed.items.join('\n');
-        } else if (parsed.note) {
-            displayContent = parsed.note;
-        }
-    } catch (e) {
-        // Not JSON
+    // Better heuristic for mock summary
+    let summary = text;
+
+    // If it looks like EPO data, we can try to extract the core text
+    const lines = text.split('\n');
+    const interestingLines = lines.filter(l =>
+        l.toLowerCase().includes('text') ||
+        l.toLowerCase().includes('meno') ||
+        l.toLowerCase().includes('datum') ||
+        l.toLowerCase().includes('poznámka')
+    );
+
+    if (interestingLines.length > 0) {
+        summary = interestingLines.join('\n');
     }
 
     return {
         source: 'mock',
-        name_main: 'MOCK NAME',
-        date: '1.1.2026',
-        place: 'Bratislava',
-        body_full: displayContent
+        name_main: 'MOCK NAME (AI Error)',
+        date: '---',
+        place: '---',
+        body_full: "CHYBA AI EXTRAKCIE. ZOBRAZUJEM PÔVODNÝ TEXT:\n\n" + summary
     };
 }

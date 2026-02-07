@@ -28,29 +28,36 @@ export function matchTemplate(productName: string): string {
 }
 
 export function formatMetadataValue(key: string, value: any): string | null {
-    // 1. Skip internal keys that don't carry user info
+    // 1. Skip ONLY definitely useless tracking/internal keys
     const internalKeysToSkip = [
-        '_tm_epo', '_tm_epo_options_prices', '_tm_epo_product_original_price',
-        '_tmcartfee_data', '_tmdata', '_tmpost_data', '_tmcp_post_fields',
-        'gtm4wp_product_data'
+        'gtm4wp_product_data', '_tm_epo_counter', 'tcaddtocart'
     ];
 
     if (internalKeysToSkip.includes(key)) return null;
 
-    // 2. Specialized parsing for Extra Product Options
-    if (key === '_tmcartepo_data' && (typeof value === 'object' || Array.isArray(value))) {
+    // 2. Specialized parsing for Extra Product Options (EPO)
+    // EPO data can be in _tmcartepo_data or _tmdata or _tmcartfee_data
+    if (
+        (key.includes('_tm') || key === 'item_meta') &&
+        (typeof value === 'object' || Array.isArray(value) || (typeof value === 'string' && (value.includes('[') || value.includes('{'))))
+    ) {
         try {
-            const parsed = Array.isArray(value) ? value : JSON.parse(value as string);
+            const parsed = (typeof value === 'string') ? JSON.parse(value) : value;
             if (Array.isArray(parsed)) {
-                return parsed.map((item: any) => {
-                    if (item.name && item.value) {
-                        return `${item.name}: ${item.value}`;
+                // Flatten nested arrays if any
+                const flat = parsed.flat();
+                return flat.map((item: any) => {
+                    if (item && typeof item === 'object') {
+                        const name = item.name || item.section_label || item.key || '';
+                        const val = item.value || item.key || '';
+                        if (name && val && name !== val) return `${name}: ${val}`;
+                        if (val) return val;
                     }
-                    return null;
-                }).filter(Boolean).join('\n');
+                    return String(item);
+                }).filter(Boolean).join(', ');
             }
         } catch (e) {
-            // Fallback to stringify
+            // Fallback to normal stringification
         }
     }
 
@@ -58,7 +65,7 @@ export function formatMetadataValue(key: string, value: any): string | null {
     if (value !== null && typeof value !== 'undefined') {
         if (typeof value === 'object' || Array.isArray(value)) {
             try {
-                return JSON.stringify(value, null, 2);
+                return JSON.stringify(value);
             } catch (e) {
                 return String(value);
             }
