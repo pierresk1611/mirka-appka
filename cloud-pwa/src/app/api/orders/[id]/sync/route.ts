@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
 
     try {
         // 1. Fetch Credentials
