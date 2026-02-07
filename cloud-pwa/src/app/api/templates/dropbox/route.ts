@@ -17,7 +17,7 @@ export async function GET(request: Request) {
             const setting = await prisma.settings.findUnique({
                 where: { key: 'DROPBOX_ACCESS_TOKEN' }
             });
-            accessToken = setting?.value;
+            accessToken = setting?.value ?? null;
         }
 
         if (!accessToken) {
