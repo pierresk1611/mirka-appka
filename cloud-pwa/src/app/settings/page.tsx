@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '../../components/AppLayout';
-import { Settings, Save, Loader2, Key, Globe, Folder, Database, Wifi, Plus, Trash2, Layout } from 'lucide-react';
+import { Settings, Save, Loader2, Key, Globe, Folder, Database, Wifi, Plus, Trash2, Layout, AlertTriangle } from 'lucide-react';
 
 interface Store {
     id: string;
@@ -36,6 +36,12 @@ export default function SettingsPage() {
     const [testingWoo, setTestingWoo] = useState<string | null>(null);
     const [testingDropbox, setTestingDropbox] = useState(false);
     const [syncingDropbox, setSyncingDropbox] = useState(false);
+    const [debugInfo, setDebugInfo] = useState<{
+        open: boolean;
+        title: string;
+        data: any;
+        isError: boolean;
+    }>({ open: false, title: '', data: null, isError: false });
 
     // Fetch initial settings and stores
     useEffect(() => {
@@ -150,6 +156,7 @@ export default function SettingsPage() {
 
     const handleTestDropbox = async () => {
         setTestingDropbox(true);
+        setDebugInfo({ open: false, title: '', data: null, isError: false });
         try {
             const params = new URLSearchParams({
                 test: 'true',
@@ -158,10 +165,15 @@ export default function SettingsPage() {
             });
             const res = await fetch(`/api/templates/dropbox?${params.toString()}`);
             const data = await res.json();
-            if (res.ok && data.success) alert(`✅ Dropbox Pripojený: Nájdených ${data.count} položiek.`);
-            else alert(`❌ Chyba: ${data.error || data.details}`);
-        } catch (error) {
-            alert('❌ Chyba: Network Error');
+
+            if (res.ok && data.success) {
+                alert(`✅ Dropbox Pripojený: Nájdených ${data.count} položiek.`);
+                setDebugInfo({ open: true, title: 'Úspešné Testovacie Volanie', data, isError: false });
+            } else {
+                setDebugInfo({ open: true, title: 'Chyba Testovania Dropboxu', data, isError: true });
+            }
+        } catch (error: any) {
+            setDebugInfo({ open: true, title: 'Network Error (Dropbox Test)', data: { message: error.message }, isError: true });
         } finally {
             setTestingDropbox(false);
         }
@@ -169,6 +181,7 @@ export default function SettingsPage() {
 
     const handleSyncDropbox = async () => {
         setSyncingDropbox(true);
+        setDebugInfo({ open: false, title: '', data: null, isError: false });
         try {
             const params = new URLSearchParams({
                 token: config.DROPBOX_ACCESS_TOKEN,
@@ -176,10 +189,15 @@ export default function SettingsPage() {
             });
             const res = await fetch(`/api/templates/dropbox?${params.toString()}`);
             const data = await res.json();
-            if (res.ok && data.success) alert(`✅ Sync Dokončený: ${data.count} šablón pripravených.`);
-            else alert(`❌ Chyba Syncu: ${data.error}`);
-        } catch (error) {
-            alert('❌ Chyba: Nepodarilo sa spojiť s API.');
+
+            if (res.ok && data.success) {
+                alert(`✅ Sync Dokončený: ${data.count} šablón pripravených.`);
+                setDebugInfo({ open: true, title: 'Úspešná Synchronizácia', data, isError: false });
+            } else {
+                setDebugInfo({ open: true, title: 'Chyba Synchronizácie Dropboxu', data, isError: true });
+            }
+        } catch (error: any) {
+            setDebugInfo({ open: true, title: 'Network Error (Dropbox Sync)', data: { message: error.message }, isError: true });
         } finally {
             setSyncingDropbox(false);
         }
@@ -351,6 +369,41 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Debug Info Section */}
+                {debugInfo.open && (
+                    <div className={`mt-8 p-6 rounded-2xl border-2 ${debugInfo.isError ? 'bg-red-50 border-red-200 text-red-900' : 'bg-green-50 border-green-200 text-green-900'}`}>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                                {debugInfo.isError ? <AlertTriangle className="w-6 h-6 text-red-600" /> : <Database className="w-6 h-6 text-green-600" />}
+                                <h4 className="font-black uppercase tracking-tight text-sm">{debugInfo.title}</h4>
+                            </div>
+                            <button
+                                onClick={() => setDebugInfo({ ...debugInfo, open: false })}
+                                className="text-xs font-bold hover:underline opacity-50 hover:opacity-100"
+                            >
+                                ZAVRIEŤ DEBUG
+                            </button>
+                        </div>
+
+                        {debugInfo.data?.hint && (
+                            <div className="bg-white/80 p-4 rounded-xl border border-blue-200 text-blue-900 text-xs font-bold mb-4 shadow-sm">
+                                💡 TIP: {debugInfo.data.hint}
+                            </div>
+                        )}
+
+                        <div className="bg-black/95 text-green-400 p-6 rounded-xl font-mono text-[11px] overflow-auto max-h-[400px] shadow-2xl">
+                            <div className="mb-2 text-white/40 border-b border-white/10 pb-2">RAW API RESPONSE:</div>
+                            <pre>{JSON.stringify(debugInfo.data, null, 2)}</pre>
+                        </div>
+
+                        {debugInfo.isError && (
+                            <div className="mt-4 text-xs text-red-600 italic">
+                                Ak vidíte "path/not_found", skontrolujte, či cesta začína správne vzhľadom na rozsah vášho Dropbox App Tokenu.
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Save All */}
                 <div className="sticky bottom-6 flex justify-end">
