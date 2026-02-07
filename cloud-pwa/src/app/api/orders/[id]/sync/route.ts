@@ -79,6 +79,31 @@ export async function POST(
                         status: 'AI_READY'
                     }
                 });
+
+                // 6. Generate preview automatically
+                try {
+                    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+                    const previewRes = await fetch(`${baseUrl}/api/preview/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ itemId: savedItem.id })
+                    });
+
+                    if (previewRes.ok) {
+                        // The preview API returns an image, so we need to construct the URL
+                        const previewUrl = `${baseUrl}/api/preview/generate?itemId=${savedItem.id}`;
+                        await prisma.orderItem.update({
+                            where: { id: savedItem.id },
+                            data: { preview_url: previewUrl }
+                        });
+                        console.log(`✅ Preview generated for item ${savedItem.id}`);
+                    } else {
+                        console.warn(`⚠️ Preview generation failed for item ${savedItem.id}`);
+                    }
+                } catch (previewError) {
+                    console.error('Preview generation error:', previewError);
+                    // Don't fail the whole sync if preview fails
+                }
             }
         }
 
