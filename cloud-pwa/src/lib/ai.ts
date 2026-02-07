@@ -8,12 +8,16 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
     const finalApiKey = apiKeyOverride || process.env.OPENAI_API_KEY;
 
     if (!finalApiKey) {
-        console.warn('OpenAI API Key missing, returning mock data.');
+        console.warn('Groq/AI API Key missing, returning mock data.');
         return mockParse(text, templateKey);
     }
 
     try {
-        const openaiInstance = new OpenAI({ apiKey: finalApiKey });
+        // Groq uses the same OpenAI SDK, just different baseURL and model
+        const groqInstance = new OpenAI({
+            apiKey: finalApiKey,
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
 
         const prompt = `
       You are a professional copywriter and data extraction assistant for a printing company.
@@ -40,9 +44,9 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
       Output ONLY a valid JSON object.
     `;
 
-        const completion = await openaiInstance.chat.completions.create({
+        const completion = await groqInstance.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'gpt-4o-mini',
+            model: 'llama-3.3-70b-versatile',
             response_format: { type: "json_object" },
         });
 
@@ -58,7 +62,7 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
 
     } catch (error: any) {
         const errorMsg = error.message || String(error);
-        console.error('--- AI Processing Error ---');
+        console.error('--- AI Processing Error (Groq) ---');
         console.error(errorMsg);
 
         return mockParse(text, templateKey, errorMsg);
@@ -92,6 +96,6 @@ function mockParse(text: string, templateKey: string, errorMsg?: string) {
         name_main: 'CHYBA EXTRAKCIE',
         date: '---',
         place: '---',
-        body_full: `CHYBA AI: ${errorMsg || 'Neznáma chyba'}\n\nUpozornenie: Vaše OpenAI konto pravdepodobne nemá kredit (Chyba 429).\n\nZOBRAZUJEM PÔVODNÝ TEXT:\n\n${summary}`
+        body_full: `CHYBA AI (Groq): ${errorMsg || 'Neznáma chyba'}\n\nUpozornenie: Skontrolujte si Groq API kľúč a limity.\n\nZOBRAZUJEM PÔVODNÝ TEXT:\n\n${summary}`
     };
 }

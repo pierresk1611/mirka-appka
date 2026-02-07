@@ -290,19 +290,20 @@ export default function SettingsPage() {
                                 <Database className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">AI Spracovanie</h3>
+                                <h3 className="text-lg font-bold text-gray-900">AI Spracovanie (Groq)</h3>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">OpenAI API Key</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Groq API Key</label>
                             <input
                                 name="OPENAI_API_KEY"
                                 value={config.OPENAI_API_KEY}
                                 onChange={handleChange}
                                 type="password"
-                                placeholder="sk-..."
+                                placeholder="gsk_..."
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono"
                             />
+                            <p className="text-xs text-gray-400 mt-1">Získajte v <a href="https://console.groq.com/keys" target="_blank" className="text-blue-500 underline">Groq Console</a>.</p>
                         </div>
                     </div>
 
