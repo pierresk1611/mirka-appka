@@ -4,23 +4,17 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = 'mirka@autodesign.sk';
-    const password = 'admin'; // Change this in production!
-    const password_hash = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.upsert({
-        where: { email },
+    // Seed default settings if they don't exist
+    await prisma.settings.upsert({
+        where: { key: 'SHEET_SIZE' },
         update: {},
         create: {
-            email,
-            name: 'Mirka Admin',
-            password_hash,
-            role: 'SUPER_ADMIN',
-            status: 'ACTIVE',
-        },
+            key: 'SHEET_SIZE',
+            value: 'SRA3'
+        }
     });
 
-    console.log({ user });
+    console.log('Seed: Default settings created.');
 }
 
 main()
