@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
+import { parseOrderText } from '@/lib/ai';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -55,21 +56,43 @@ export async function POST() {
                 // --- MAPPING LOGIC ---
                 // 1. Template Key from Line Items
                 let templateKey = 'UNKNOWN';
+                let productName = 'UNKNOWN';
                 let allItemsText = [];
 
                 for (const item of order.line_items) {
-                    const name = item.name || '';
-                    allItemsText.push(name);
-
-                    // Logic: Check for known template keys in name or meta
-                    // Simple heuristic: If name contains "FINGERPRINTS" -> FINGERPRINTS
-                    if (name.toUpperCase().includes('FINGERPRINTS')) templateKey = 'FINGERPRINTS';
+                    productName = item.name || '';
+                    allItemsText.push(`Produkt: ${productName}`);
 
                     // Check Meta for "Extra Product Options" if available in item.meta_data
                     if (item.meta_data && Array.isArray(item.meta_data)) {
                         for (const meta of item.meta_data) {
-                            allItemsText.push(`${meta.key}: ${meta.value}`);
+                            let value = meta.value;
+
+                            // Fix [object Object] issue
+                            if (typeof value === 'object' && value !== null) {
+                                try {
+                                    // If it's the tm_epo complex data, we could try to extract it 
+                                    // but for source_text it's better to have a readable string
+                                    value = JSON.stringify(value);
+                                } catch (e) {
+                                    value = '[Complex Data]';
+                                }
+                            }
+
+                            allItemsText.push(`${meta.key}: ${value}`);
                         }
+                    }
+
+                    // Template Matching (Consistent with CSV import)
+                    const lowerName = productName.toLowerCase();
+                    if (lowerName.includes('pivo')) {
+                        templateKey = 'BIR_PIVO';
+                    } else if (lowerName.includes('svadobn') || lowerName.includes('wedding')) {
+                        templateKey = 'WED_BASIC';
+                    } else if (lowerName.includes('odtlač')) {
+                        templateKey = 'FINGERPRINTS';
+                    } else if (templateKey === 'UNKNOWN') {
+                        templateKey = productName; // Fallback
                     }
                 }
 
@@ -79,22 +102,41 @@ export async function POST() {
                     items: allItemsText
                 }, null, 2);
 
-                // --- UPSERT ---
-                await prisma.order.upsert({
+                // --- SAVING ---
+                const savedOrder = await prisma.order.upsert({
                     where: { id: id },
                     update: {
-                        // Optional: update status if changed remotely? 
-                        // For now we persist local status if it exists to avoid overwriting 'GENERATING'
+                        template_key: templateKey,
+                        source_text: sourceText,
                     },
                     create: {
                         id: id,
                         customer_name: customerName,
                         template_key: templateKey,
                         source_text: sourceText,
-                        status: 'AI_READY', // Default for new import
+                        status: 'AI_READY',
                         created_at: new Date(order.date_created)
                     }
                 });
+
+                // --- AI PROCESSING (Automatic) ---
+                if (!savedOrder.ai_data || savedOrder.status === 'AI_READY') {
+                    try {
+                        console.log(`AI Processing for Order #${id}...`);
+                        const parsedAiData = await parseOrderText(sourceText, templateKey);
+                        if (parsedAiData) {
+                            await prisma.order.update({
+                                where: { id: id },
+                                data: {
+                                    ai_data: JSON.stringify(parsedAiData),
+                                    status: 'AI_READY'
+                                }
+                            });
+                        }
+                    } catch (aiErr) {
+                        console.error(`AI extraction failed for Order #${id}:`, aiErr);
+                    }
+                }
 
                 result.added++;
             } catch (err) {

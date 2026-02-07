@@ -58,10 +58,12 @@ export async function parseOrderText(text: string, templateKey: string) {
 }
 
 function mockParse(text: string, templateKey: string) {
-    // Simple heuristic fallback
+    // Simple heuristic fallback for development/testing without API key
     return {
         source: 'mock',
         name_main: 'MOCK NAME',
-        body_full: text.substring(0, 50) + '...'
+        date: '1.1.2026',
+        place: 'Bratislava',
+        body_full: text // Pass through text as fallback
     };
 }

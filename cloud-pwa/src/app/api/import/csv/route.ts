@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseCSV, detectType, extractEPOData } from '@/lib/csv-parser';
+import { parseOrderText } from '@/lib/ai';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
@@ -55,9 +56,12 @@ export async function POST(request: Request) {
                             templateKey = productName; // Fallback to product name as key
                         }
 
-                        await prisma.order.upsert({
+                        const savedOrder = await prisma.order.upsert({
                             where: { id: id },
-                            update: {},
+                            update: {
+                                template_key: templateKey,
+                                source_text: epo.text || metaData,
+                            },
                             create: {
                                 id: id,
                                 customer_name: customerName,
@@ -69,6 +73,26 @@ export async function POST(request: Request) {
                                 status: 'AI_READY'
                             }
                         });
+
+                        // --- AI PROCESSING (Automatic) ---
+                        if (!savedOrder.ai_data || savedOrder.status === 'AI_READY') {
+                            try {
+                                console.log(`AI Processing for Order #${id}...`);
+                                const parsedAiData = await parseOrderText(epo.text || metaData, templateKey);
+                                if (parsedAiData) {
+                                    await prisma.order.update({
+                                        where: { id: id },
+                                        data: {
+                                            ai_data: JSON.stringify(parsedAiData),
+                                            status: 'AI_READY'
+                                        }
+                                    });
+                                }
+                            } catch (aiErr) {
+                                console.error(`AI extraction failed for Order #${id}:`, aiErr);
+                            }
+                        }
+
                         result.ordersCreated++;
                     }
                 }
