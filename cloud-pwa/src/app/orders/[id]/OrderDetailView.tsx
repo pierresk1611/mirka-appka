@@ -13,6 +13,7 @@ export default function OrderDetailView() {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => { console.log('OrderDetailView Loaded - Version Blue Drop'); }, []);
 
@@ -22,38 +23,56 @@ export default function OrderDetailView() {
     }
     const [formData, setFormData] = useState<FormData>({});
 
+    const fetchOrder = async () => {
+        try {
+            const res = await fetch(`/api/orders/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setOrder(data);
+                // Parse AI Data
+                if (data.ai_data) {
+                    try {
+                        const parsed = JSON.parse(data.ai_data);
+                        setFormData(parsed);
+                    } catch (e) {
+                        console.error("Failed to parse AI data", e);
+                    }
+                }
+            } else {
+                alert('Objednávka nenájdená');
+                router.push('/');
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Fetch Order
     useEffect(() => {
         if (!id) return;
-        const fetchOrder = async () => {
-            try {
-                const res = await fetch(`/api/orders/${id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setOrder(data);
-                    // Parse AI Data
-                    if (data.ai_data) {
-                        try {
-                            const parsed = JSON.parse(data.ai_data);
-                            setFormData(parsed);
-                        } catch (e) {
-                            console.error("Failed to parse AI data", e);
-                        }
-                    }
-                } else {
-                    alert('Objednávka nenájdená');
-                    router.push('/');
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchOrder();
     }, [id, router]);
 
     const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    const handleForceSync = async () => {
+        setSyncing(true);
+        try {
+            const res = await fetch(`/api/orders/${id}/sync`, { method: 'POST' });
+            if (res.ok) {
+                await fetchOrder();
+                alert('Dáta boli úspešne premazané a znova načítané z WooCommerce.');
+            } else {
+                alert('Sync zlyhal.');
+            }
+        } catch (e) {
+            alert('Chyba pripojenia.');
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -135,12 +154,22 @@ export default function OrderDetailView() {
                             <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">
                                 {order.status}
                             </span>
-                            <span className="bg-purple-100 text-purple-700 text-[10px] px-1 rounded border border-purple-200">v3.1</span>
+                            <span className="bg-purple-100 text-purple-700 text-[10px] px-1 rounded border border-purple-200">v3.2</span>
                         </h1>
                         <p className="text-sm text-slate-500">Šablóna: <span className="font-mono font-bold text-slate-700">{order.template_key}</span></p>
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    {/* Re-sync button */}
+                    <button
+                        onClick={handleForceSync}
+                        disabled={syncing}
+                        className="px-4 py-2 bg-slate-100 border border-slate-300 rounded-md text-slate-600 font-medium hover:bg-slate-200 transition flex items-center gap-2"
+                    >
+                        {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Vynútiť Sync
+                    </button>
+
                     {/* Save JSON changes locally */}
                     <button
                         onClick={() => handleSave()}
@@ -197,7 +226,19 @@ export default function OrderDetailView() {
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {Object.keys(formData).length === 0 ? (
-                            <div className="text-center text-gray-400 mt-10">Žiadne AI dáta. Skúste Sync znova.</div>
+                            <div className="text-center mt-10 space-y-4 px-6">
+                                <p className="text-gray-400">
+                                    {order.status === 'AI_READY' || order.status === 'PENDING'
+                                        ? '⏳ AI práve spracováva dáta objednávky...'
+                                        : '❌ Žiadne AI dáta nenájdené.'}
+                                </p>
+                                <button
+                                    onClick={handleForceSync}
+                                    className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 transition"
+                                >
+                                    Skúsiť Sync znova
+                                </button>
+                            </div>
                         ) : (
                             Object.keys(formData).map((key) => (
                                 <div key={key}>

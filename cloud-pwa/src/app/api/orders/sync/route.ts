@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
+import { matchTemplate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -87,13 +88,9 @@ export async function POST() {
                     }
 
                     // Template Matching (Consistent with CSV import)
-                    const lowerName = productName.toLowerCase();
-                    if (lowerName.includes('pivo')) {
-                        templateKey = 'BIR_PIVO';
-                    } else if (lowerName.includes('svadobn') || lowerName.includes('wedding')) {
-                        templateKey = 'WED_BASIC';
-                    } else if (lowerName.includes('odtlač')) {
-                        templateKey = 'FINGERPRINTS';
+                    const matchedKey = matchTemplate(productName);
+                    if (matchedKey !== 'UNKNOWN') {
+                        templateKey = matchedKey;
                     } else if (templateKey === 'UNKNOWN') {
                         templateKey = productName; // Fallback
                     }

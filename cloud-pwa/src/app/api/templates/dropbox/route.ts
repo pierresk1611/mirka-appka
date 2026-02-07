@@ -21,7 +21,7 @@ export async function GET(request: Request) {
         const pathSetting = await prisma.settings.findUnique({
             where: { key: 'DROPBOX_PATH' }
         });
-        let dropboxPath = pathSetting?.value || '/TEMPLATES';
+        let dropboxPath = pathSetting?.value?.trim() || '';
 
         // Fix: If user enters a local Mac path like /Users/apple/Dropbox/TEMPLATES, 
         // we strip the prefix to make it a valid Dropbox cloud path.
@@ -29,7 +29,12 @@ export async function GET(request: Request) {
             dropboxPath = '/' + dropboxPath.split('Dropbox/')[1];
         }
 
-        if (!dropboxPath.startsWith('/')) dropboxPath = '/' + dropboxPath;
+        // Dropbox API: Root is represented by an empty string, not "/"
+        if (dropboxPath === '/') dropboxPath = '';
+        if (dropboxPath.startsWith('/') && dropboxPath.length > 1) {
+            // Keep it as is for subfolders, but ensure no trailing slash
+            if (dropboxPath.endsWith('/')) dropboxPath = dropboxPath.slice(0, -1);
+        }
 
         const dbx = new Dropbox({ accessToken });
         let folders: any[] = [];
