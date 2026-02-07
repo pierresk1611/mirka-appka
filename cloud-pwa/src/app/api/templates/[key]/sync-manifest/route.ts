@@ -38,7 +38,7 @@ export async function POST(
         manifest.mappings = template.mappings ? JSON.parse(template.mappings) : {};
 
         // 3. Write to Dropbox
-        const dbx = new Dropbox({ accessToken });
+        const dbx = new Dropbox({ accessToken, fetch });
         const filePath = `${template.folder_path}/manifest.json`;
 
         console.log(`Syncing manifest to Dropbox: ${filePath}`);

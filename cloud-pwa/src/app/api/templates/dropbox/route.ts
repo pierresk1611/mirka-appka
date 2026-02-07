@@ -49,7 +49,7 @@ export async function GET(request: Request) {
             if (dropboxPath.endsWith('/')) dropboxPath = dropboxPath.slice(0, -1);
         }
 
-        const dbx = new Dropbox({ accessToken });
+        const dbx = new Dropbox({ accessToken, fetch });
         console.log('Testing Dropbox with path:', dropboxPath);
 
         // 1. Recursive Search for PSD and AI files
