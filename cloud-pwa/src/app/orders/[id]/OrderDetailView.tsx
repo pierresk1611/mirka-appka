@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
-import { Loader2, Save, Send, AlertTriangle, Box, Layers, User, Calendar, MapPin, Globe } from 'lucide-react';
+import { Loader2, Save, Send, AlertTriangle, Box, Layers, User, Calendar, MapPin, Globe, Database } from 'lucide-react';
 
 interface OrderItem {
     id: string;
@@ -61,13 +61,13 @@ export default function OrderDetailView() {
                 });
                 setItemForms(forms);
 
-                if (!activeItemId && data.items.length > 0) {
-                    setActiveItemId(data.items[0].id);
-                }
-
-                // Fetch mappings for the template of the first item
+                // Use the first item by default if none selected
                 if (data.items.length > 0) {
-                    const mapRes = await fetch(`/api/templates/${data.items[0].template_key}/mapping`);
+                    setActiveItemId(prev => prev || data.items[0].id);
+
+                    // Fetch mappings for the template of the first item
+                    const templateToFetch = data.items[0].template_key;
+                    const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`);
                     if (mapRes.ok) {
                         const mapData = await mapRes.json();
                         setMappings(mapData.mappings ? JSON.parse(mapData.mappings) : {});
@@ -84,12 +84,31 @@ export default function OrderDetailView() {
         }
     };
 
+    const handleExtractAI = async (itemId: string) => {
+        setSaving(true);
+        try {
+            // We reuse the sync logic but for a single item
+            // For now, let's call a specific endpoint or re-sync the whole order
+            const res = await fetch(`/api/orders/${id}/sync`, { method: 'POST' });
+            if (res.ok) {
+                await fetchOrder(); // Refresh data
+                alert('AI analýza bola dokončená.');
+            } else {
+                alert('Chyba pri AI analýze. Skontrolujte API kľúč v nastaveniach.');
+            }
+        } catch (e) {
+            alert('Chyba pripojenia');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const fetchLogs = async () => {
         try {
             const res = await fetch('/api/agent/logs');
             if (res.ok) {
                 const data = await res.json();
-                setLogs(data.logs);
+                setLogs(data.logs || []);
             }
         } catch (e) { }
     };
@@ -282,19 +301,43 @@ export default function OrderDetailView() {
                         <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                             Editor Dát: {activeItem?.template_key}
                         </span>
-                        <button
-                            onClick={() => activeItemId && handleSaveItem(activeItemId)}
-                            disabled={saving}
-                            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition flex items-center gap-1"
-                        >
-                            <Save className="w-3 h-3" /> Uložiť
-                        </button>
+                        <div className="flex gap-2">
+                            {systemKeys.length > 0 && (
+                                <button
+                                    onClick={() => activeItemId && handleExtractAI(activeItemId)}
+                                    disabled={saving}
+                                    className="bg-blue-500/30 hover:bg-blue-500/50 text-white/90 px-2 py-1 rounded-lg text-[9px] font-bold uppercase transition flex items-center gap-1"
+                                    title="Pre-extrahuje dáta cez AI znova"
+                                >
+                                    <Database className="w-3 h-3" /> Re-sync
+                                </button>
+                            )}
+                            <button
+                                onClick={() => activeItemId && handleSaveItem(activeItemId)}
+                                disabled={saving}
+                                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition flex items-center gap-1"
+                            >
+                                <Save className="w-3 h-3" /> Uložiť
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {systemKeys.length === 0 ? (
-                            <div className="text-center py-20 opacity-10">
-                                <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-300 mb-6 italic font-serif text-2xl">AI</div>
+                                <h3 className="text-slate-900 font-bold mb-2">Chýbajúce dáta</h3>
+                                <p className="text-sm text-slate-500 mb-8 max-w-[240px]">
+                                    Položka ešte nebola spracovaná umelou inteligenciou alebo extrakcia zlyhala.
+                                </p>
+                                <button
+                                    onClick={() => activeItemId && handleExtractAI(activeItemId)}
+                                    disabled={saving}
+                                    className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-3"
+                                >
+                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
+                                    Spustiť AI Extrakciu
+                                </button>
                             </div>
                         ) : (
                             systemKeys.map(key => (

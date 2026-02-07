@@ -35,7 +35,11 @@ export async function POST(
         const response = await WooCommerce.get(`orders/${existingOrder.woo_id}`);
         const order = response.data;
 
-        // 3. Sync Items to OrderItem table
+        // 3. Fetch AI Key from Settings
+        const settings = await prisma.settings.findMany();
+        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
+
+        // 4. Sync Items to OrderItem table
         for (const item of order.line_items) {
             const productName = item.name || '';
             const allMetadata = item.meta_data.map((m: any) => `${m.key}: ${formatMetadataValue(m.key, m.value)}`).join('\n');
@@ -65,8 +69,8 @@ export async function POST(
                 }
             });
 
-            // 4. Trigger AI Processing for this item
-            const aiData = await parseOrderText(sourceText, templateKey);
+            // 5. Trigger AI Processing for this item
+            const aiData = await parseOrderText(sourceText, templateKey, aiKey);
             if (aiData) {
                 await prisma.orderItem.update({
                     where: { id: savedItem.id },
