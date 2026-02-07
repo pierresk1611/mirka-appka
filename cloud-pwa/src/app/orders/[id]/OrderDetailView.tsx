@@ -72,10 +72,15 @@ export default function OrderDetailView() {
 
                     // Fetch mappings for the template of the first item
                     const templateToFetch = data.items[0].template_key;
-                    const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`);
-                    if (mapRes.ok) {
-                        const mapData = await mapRes.json();
-                        setMappings(mapData.mappings ? JSON.parse(mapData.mappings) : {});
+                    try {
+                        const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`);
+                        if (mapRes.ok) {
+                            const mapData = await mapRes.json();
+                            setMappings(mapData?.mappings ? JSON.parse(mapData.mappings) : {});
+                        }
+                    } catch (mapError) {
+                        console.warn('Failed to fetch mappings:', mapError);
+                        setMappings({});
                     }
                 }
             } else {
