@@ -17,13 +17,14 @@ export async function POST(
         // 1. Fetch Credentials
         const settings = await prisma.settings.findMany({
             where: {
-                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS'] }
+                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS', 'OPENAI_API_KEY'] }
             }
         });
 
         const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
         const wooCk = settings.find(s => s.key === 'WOO_CK')?.value;
         const wooCs = settings.find(s => s.key === 'WOO_CS')?.value;
+        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
 
         if (!wooUrl || !wooCk || !wooCs) {
             return NextResponse.json({ error: 'Missing Woo Credentials' }, { status: 500 });
@@ -70,10 +71,8 @@ export async function POST(
             }
         }
 
-        const sourceText = JSON.stringify({
-            note: order.customer_note,
-            items: allItemsText
-        }, null, 2);
+        // --- NEW: Human Readable Source Text for AI ---
+        const sourceText = `Poznámka zákazníka: ${order.customer_note || 'Žiadna'}\n\nProdukty a možnosti:\n${allItemsText.join('\n')}`;
 
         // 3. Force update in DB
         const savedOrder = await prisma.order.update({
@@ -87,7 +86,7 @@ export async function POST(
         });
 
         // 4. Trigger AI Processing immediately for this one
-        const parsedAiData = await parseOrderText(sourceText, templateKey);
+        const parsedAiData = await parseOrderText(sourceText, templateKey, aiKey);
         if (parsedAiData) {
             await prisma.order.update({
                 where: { id: id },

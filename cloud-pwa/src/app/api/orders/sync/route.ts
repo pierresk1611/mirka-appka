@@ -19,15 +19,10 @@ export async function POST() {
         const wooUrl = settings.find(s => s.key === 'WOO_URL')?.value;
         const wooCk = settings.find(s => s.key === 'WOO_CK')?.value;
         const wooCs = settings.find(s => s.key === 'WOO_CS')?.value;
+        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
 
         if (!wooUrl || !wooCk || !wooCs) {
-            console.warn('Missing WooCommerce Credentials in DB. Using Mock/Empty.');
-            // Logic to fall back to env or return empty?
-            // Prompt says: "Settings: Použi premenné z databázy"
-            if (process.env.WOO_URL && process.env.WOO_API_KEY) {
-                // Fallback to Env for backward compat if needed, but SDK needs CK/CS
-            }
-            return NextResponse.json({ error: 'Missing Woo Credentials in Settings' }, { status: 500 });
+            return NextResponse.json({ error: 'Missing WooCommerce settings.' }, { status: 500 });
         }
 
         // 2. Initialize Woo Client
@@ -40,69 +35,68 @@ export async function POST() {
 
         console.log(`Syncing orders from ${wooUrl}...`);
 
-        // 3. Fetch Processing Orders
+        // 2. Fetch "processing" orders
         const response = await WooCommerce.get("orders", {
             status: "processing",
-            per_page: 20 // Limit batch size
+            per_page: 20
         });
 
         const orders = response.data;
-        const result = { added: 0, updated: 0, errors: 0 };
+        let syncedCount = 0;
 
         for (const order of orders) {
             try {
-                const id = order.id;
-                const customerName = `${order.billing.first_name} ${order.billing.last_name}`;
+                const { id, billing, date_created, customer_note, line_items } = order;
+                const customerName = `${billing.first_name} ${billing.last_name}`;
 
                 // --- MAPPING LOGIC ---
                 // 1. Template Key from Line Items
                 let templateKey = 'UNKNOWN';
-                let productName = 'UNKNOWN';
                 let allItemsText = [];
 
-                for (const item of order.line_items) {
-                    productName = item.name || '';
-                    allItemsText.push(`Produkt: ${productName}`);
+                // Simple Logic: Take first item's product name to match template
+                if (line_items && line_items.length > 0) {
+                    for (const item of line_items) {
+                        const productName = item.name || '';
+                        allItemsText.push(`Produkt: ${productName}`);
 
-                    // Check Meta for "Extra Product Options" if available in item.meta_data
-                    if (item.meta_data && Array.isArray(item.meta_data)) {
-                        for (const meta of item.meta_data) {
-                            let val = meta.value;
+                        // Check Meta for "Extra Product Options" if available in item.meta_data
+                        if (item.meta_data && Array.isArray(item.meta_data)) {
+                            for (const meta of item.meta_data) {
+                                let val = meta.value;
 
-                            // Robust fix for [object Object] issue
-                            if (val !== null && typeof val !== 'undefined') {
-                                if (typeof val === 'object' || Array.isArray(val)) {
-                                    try {
-                                        val = JSON.stringify(val);
-                                    } catch (e) {
-                                        val = String(val);
+                                // Robust fix for [object Object] issue
+                                if (val !== null && typeof val !== 'undefined') {
+                                    if (typeof val === 'object' || Array.isArray(val)) {
+                                        try {
+                                            val = JSON.stringify(val);
+                                        } catch (e) {
+                                            val = String(val);
+                                        }
+                                    } else if (typeof val === 'string' && val.includes('[object Object]')) {
+                                        // If we somehow got a string with [object Object], it's already corrupted
+                                        val = '[JSON Serialization Error in Metadata]';
                                     }
-                                } else if (typeof val === 'string' && val.includes('[object Object]')) {
-                                    // If we somehow got a string with [object Object], it's already corrupted
-                                    val = '[JSON Serialization Error in Metadata]';
                                 }
+
+                                allItemsText.push(`${meta.key}: ${val}`);
                             }
-
-                            allItemsText.push(`${meta.key}: ${val}`);
                         }
-                    }
 
-                    // Template Matching (Consistent with CSV import)
-                    const matchedKey = matchTemplate(productName);
-                    if (matchedKey !== 'UNKNOWN') {
-                        templateKey = matchedKey;
-                    } else if (templateKey === 'UNKNOWN') {
-                        templateKey = productName; // Fallback
+                        // Template Matching (Consistent with CSV import)
+                        const matchedKey = matchTemplate(productName);
+                        if (matchedKey !== 'UNKNOWN') {
+                            templateKey = matchedKey;
+                        } else if (templateKey === 'UNKNOWN') {
+                            templateKey = productName; // Fallback
+                        }
                     }
                 }
 
-                // 2. Source Text (Customer Note + Items)
-                const sourceText = JSON.stringify({
-                    note: order.customer_note,
-                    items: allItemsText
-                }, null, 2);
+                // --- NEW: Human Readable Source Text for AI ---
+                const sourceText = `Poznámka zákazníka: ${customer_note || 'Žiadna'}\n\nProdukty a možnosti:\n${allItemsText.join('\n')}`;
 
-                // --- SAVING ---
+                // 3. Upsert Order
                 const savedOrder = await prisma.order.upsert({
                     where: { id: id },
                     update: {
@@ -115,20 +109,21 @@ export async function POST() {
                         template_key: templateKey,
                         source_text: sourceText,
                         status: 'AI_READY',
-                        created_at: new Date(order.date_created)
+                        created_at: new Date(date_created)
                     }
                 });
 
-                // --- AI PROCESSING (Automatic) ---
-                if (!savedOrder.ai_data || savedOrder.status === 'AI_READY') {
+                // 4. Trigger AI Extraction automatically
+                // If it's AI_READY and has no ai_data yet (or re-syncing)
+                if (savedOrder.status === 'AI_READY') {
                     try {
                         console.log(`AI Processing for Order #${id}...`);
-                        const parsedAiData = await parseOrderText(sourceText, templateKey);
-                        if (parsedAiData) {
+                        const aiData = await parseOrderText(sourceText, templateKey, aiKey);
+                        if (aiData) {
                             await prisma.order.update({
                                 where: { id: id },
                                 data: {
-                                    ai_data: JSON.stringify(parsedAiData),
+                                    ai_data: JSON.stringify(aiData),
                                     status: 'AI_READY'
                                 }
                             });
@@ -138,14 +133,17 @@ export async function POST() {
                     }
                 }
 
-                result.added++;
+                syncedCount++;
             } catch (err) {
                 console.error(`Error processing order ${order.id}:`, err);
-                result.errors++;
             }
         }
 
-        return NextResponse.json({ success: true, result });
+        return NextResponse.json({
+            success: true,
+            count: syncedCount,
+            message: `Úspešne synchronizovaných ${syncedCount} objednávok.`
+        });
 
     } catch (error) {
         console.error('Woo Sync Failed:', error);

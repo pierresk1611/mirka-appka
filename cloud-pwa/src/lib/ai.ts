@@ -4,11 +4,15 @@ const apiKey = process.env.OPENAI_API_KEY;
 
 export const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
-export async function parseOrderText(text: string, templateKey: string) {
-    if (!openai) {
+export async function parseOrderText(text: string, templateKey: string, apiKeyOverride?: string) {
+    const finalApiKey = apiKeyOverride || process.env.OPENAI_API_KEY;
+
+    if (!finalApiKey) {
         console.warn('OpenAI API Key missing, returning mock data.');
         return mockParse(text, templateKey);
     }
+
+    const openai = new OpenAI({ apiKey: finalApiKey });
 
     try {
         const prompt = `
@@ -19,7 +23,7 @@ export async function parseOrderText(text: string, templateKey: string) {
       Input Text: "${text}"
       
       Extraction Rules:
-      1. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the input text, suitable for printing on a single card. Fix typos, capitalize names, and use elegant spacing.
+      1. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the invitation or card text, suitable for printing. Fix typos, capitalize names, and use elegant spacing.
       2. If the Template Key is "BIR_PIVO" (Beer invitation), extract these specific fields:
          - "name_main": The name(s) of the person/people inviting.
          - "date": Date and time of the event.
@@ -29,7 +33,7 @@ export async function parseOrderText(text: string, templateKey: string) {
          - "date": Event date.
          - "place": Event location.
       4. For wedding templates ("WED_..."):
-         - "names": Names of the bridge and groom.
+         - "names": Names of the bride and groom.
          - "date": Wedding date and time.
       
       Output ONLY a valid JSON object.
@@ -46,7 +50,7 @@ export async function parseOrderText(text: string, templateKey: string) {
 
         // Ensure body_full exists as a fallback if AI missed it
         if (!parsed.body_full) {
-            parsed.body_full = text;
+            parsed.body_full = text.substring(0, 100) + '...';
         }
 
         return parsed;
@@ -59,11 +63,23 @@ export async function parseOrderText(text: string, templateKey: string) {
 
 function mockParse(text: string, templateKey: string) {
     // Simple heuristic fallback for development/testing without API key
+    let displayContent = text;
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed.items && Array.isArray(parsed.items)) {
+            displayContent = parsed.items.join('\n');
+        } else if (parsed.note) {
+            displayContent = parsed.note;
+        }
+    } catch (e) {
+        // Not JSON
+    }
+
     return {
         source: 'mock',
         name_main: 'MOCK NAME',
         date: '1.1.2026',
         place: 'Bratislava',
-        body_full: text // Pass through text as fallback
+        body_full: displayContent
     };
 }
