@@ -27,20 +27,21 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
       Input Text: "${text}"
       
       Extraction Rules:
-      1. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the invitation or card text, suitable for printing. Fix typos, capitalize names, and use elegant spacing.
-      2. If the Template Key is "BIR_PIVO" (Beer invitation), extract these specific fields:
-         - "name_main": The name(s) of the person/people inviting.
-         - "date": Date and time of the event.
+      1. Use SLOVAK language (slovenčina) for all extracted text and the "body_full" field.
+      2. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the invitation or card text, suitable for printing. Fix typos, capitalize names, and use elegant spacing.
+      3. If the Template Key is "BIR_PIVO" (Beer invitation), extract these specific fields:
+         - "name_main": The name(s) of the person/people inviting (e.g., "Marian Hamšík").
+         - "date": Date and time of the event (e.g., "11.04.2026 o 12:00").
          - "place": Location/Venue of the event.
-      3. For "FINGERPRINTS" (Odtlačkové obrazy):
+      4. For "FINGERPRINTS" (Odtlačkové obrazy):
          - "name_main": Names of the couple or person.
          - "date": Event date.
          - "place": Event location.
-      4. For wedding templates ("WED_..."):
+      5. For wedding templates ("WED_..."):
          - "names": Names of the bride and groom.
          - "date": Wedding date and time.
       
-      IMPORTANT: If the input text is messy, do your best to reconstruct the human message. 
+      IMPORTANT: If the input text is messy, do your best to reconstruct the human message in Slovak. 
       Output ONLY a valid JSON object.
     `;
 
