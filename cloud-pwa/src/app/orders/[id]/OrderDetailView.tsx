@@ -43,12 +43,17 @@ export default function OrderDetailView() {
     const [itemForms, setItemForms] = useState<Record<string, any>>({});
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
+    // Debug state
+    const [showDebug, setShowDebug] = useState(false);
+    const [debugData, setDebugData] = useState<any>(null);
+
     const fetchOrder = async () => {
         try {
             const res = await fetch(`/api/orders/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setOrder(data);
+                setDebugData({ success: true, orderData: data, timestamp: new Date().toISOString() });
 
                 // Initialize forms
                 const forms: any = {};
@@ -74,11 +79,14 @@ export default function OrderDetailView() {
                     }
                 }
             } else {
+                const errorData = await res.json();
+                setDebugData({ success: false, error: errorData, status: res.status, timestamp: new Date().toISOString() });
                 alert('Objednávka nenájdená');
                 router.push('/');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            setDebugData({ success: false, error: error.message, networkError: true, timestamp: new Date().toISOString() });
         } finally {
             setLoading(false);
         }
@@ -234,6 +242,12 @@ export default function OrderDetailView() {
                         </div>
                     </div>
                     <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowDebug(!showDebug)}
+                            className={`px-4 py-2 rounded-xl font-bold border transition flex items-center gap-2 ${showDebug ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-600 hover:bg-gray-50'}`}
+                        >
+                            <AlertTriangle className="w-4 h-4" /> Debug
+                        </button>
                         <button
                             onClick={() => setShowMapping(!showMapping)}
                             className={`px-4 py-2 rounded-xl font-bold border transition flex items-center gap-2 ${showMapping ? 'bg-orange-600 border-orange-600 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-600 hover:bg-gray-50'}`}
@@ -403,6 +417,62 @@ export default function OrderDetailView() {
                     </div>
                 </div>
             </div>
+
+            {/* DEBUG PANEL */}
+            {showDebug && debugData && (
+                <div className="mt-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 shadow-xl">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                            <AlertTriangle className="w-6 h-6 text-purple-600" />
+                            <h4 className="font-black uppercase tracking-tight text-sm text-purple-900">🔍 DEBUG: Preview & Order Data</h4>
+                        </div>
+                        <button
+                            onClick={() => setShowDebug(false)}
+                            className="text-xs font-bold hover:underline opacity-50 hover:opacity-100 text-purple-600"
+                        >
+                            ZAVRIEŤ
+                        </button>
+                    </div>
+
+                    {/* Active Item Preview URL */}
+                    {activeItem && (
+                        <div className="mb-4 p-4 bg-white/80 rounded-xl border border-purple-200">
+                            <div className="text-[10px] font-black text-purple-600 uppercase mb-2">Preview URL pre aktívnu položku:</div>
+                            <div className="font-mono text-xs text-purple-900 break-all bg-purple-50 p-2 rounded">
+                                {activeItem.preview_url || '❌ NULL / UNDEFINED'}
+                            </div>
+                            {activeItem.preview_url && (
+                                <div className="mt-2 text-[10px] text-purple-600">
+                                    ✅ URL je nastavená. Ak sa obrázok nezobrazuje, skontrolujte:
+                                    <ul className="list-disc ml-4 mt-1">
+                                        <li>Či URL je dostupná (skúste otvoriť v novom tabe)</li>
+                                        <li>Či agent dokončil generovanie</li>
+                                        <li>CORS nastavenia (ak je to externá URL)</li>
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Full Order Data */}
+                    <div className="bg-black/95 text-green-400 p-6 rounded-xl font-mono text-[11px] overflow-auto max-h-[400px] shadow-2xl">
+                        <div className="mb-2 text-white/40 border-b border-white/10 pb-2">RAW ORDER DATA:</div>
+                        <pre>{JSON.stringify(debugData, null, 2)}</pre>
+                    </div>
+
+                    {/* Diagnostic Info */}
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="bg-white/60 p-3 rounded-lg border border-purple-200">
+                            <div className="text-[9px] font-black text-purple-400 uppercase mb-1">Počet položiek</div>
+                            <div className="text-lg font-black text-purple-900">{order?.items.length || 0}</div>
+                        </div>
+                        <div className="bg-white/60 p-3 rounded-lg border border-purple-200">
+                            <div className="text-[9px] font-black text-purple-400 uppercase mb-1">Aktívna položka</div>
+                            <div className="text-lg font-black text-purple-900">{activeItem?.product_name_raw || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* LIVE CONSOLE */}
             <div className="mt-6 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
