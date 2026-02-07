@@ -24,17 +24,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         if (wooUrl && wooKey) {
             try {
                 console.log(`Closing order ${id} on WooCommerce...`);
-                // Calls endpoint specified in control question: /wp-json/autodesign/v1/update-status
-                const res = await fetch(`${wooUrl}/wp-json/autodesign/v1/update-status`, {
+                // Calls endpoint in the new plugin structure: /wp-json/autodesign/v1/orders/{id}/complete
+                const res = await fetch(`${wooUrl}/wp-json/autodesign/v1/orders/${id}/complete`, {
                     method: 'POST',
                     headers: {
                         'X-AutoDesign-Key': wooKey,
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        order_id: id,
-                        status: 'completed'
-                    })
+                    }
                 });
 
                 if (!res.ok) {

@@ -36,12 +36,13 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
          - "names": Names of the bride and groom.
          - "date": Wedding date and time.
       
+      IMPORTANT: If the input text is messy, do your best to reconstruct the human message. 
       Output ONLY a valid JSON object.
     `;
 
         const completion = await openaiInstance.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             response_format: { type: "json_object" },
         });
 
