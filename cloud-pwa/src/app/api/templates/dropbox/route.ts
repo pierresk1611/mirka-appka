@@ -73,17 +73,29 @@ export async function GET(request: Request) {
                 cursor = moreRes.result.cursor;
             }
         } catch (dbxErr: any) {
-            // Log the entire error object to the server console as requested
-            console.error('[Dropbox SDK Error Deep Log]', JSON.stringify(dbxErr, null, 2));
+            // Log the entire raw error object to the server console as requested
+            console.error('[Dropbox SDK Error RAW]', JSON.stringify(dbxErr, null, 2));
+
+            // Extract useful info from the complicated Dropbox error object
+            const status = dbxErr.status || 502;
+            const errorData = dbxErr.error || {};
+            const summary = errorData.error_summary || dbxErr.message || 'Unknown error';
+            const tag = errorData.error?.['.tag'] || 'unknown';
+
+            // Special hint for 'path/not_found'
+            const hint = tag === 'path' && errorData.error?.path?.['.tag'] === 'not_found'
+                ? 'HINT: Priečinok nenájdený. Ak má aplikácia prístup len typu "App Folder", cesta musí začínať od koreňa tejto zložky (bez prefixu /Apps/...)'
+                : null;
 
             return NextResponse.json({
                 error: 'Dropbox API Error',
-                status: dbxErr.status || 502,
-                details: dbxErr.error?.error_summary || dbxErr.message || 'Unknown error',
-                error_tag: dbxErr.error?.['.tag'] || 'unknown',
-                raw_error: dbxErr.error || dbxErr, // Return raw error for debugging
+                status: status,
+                error_summary: summary,
+                error_tag: tag,
+                hint: hint,
+                raw_error: dbxErr, // Returning full object to the Network tab
                 path_sent: dropboxPath
-            }, { status: dbxErr.status || 502 });
+            }, { status: status });
         }
 
         // 2. Filter and Group by Folder
