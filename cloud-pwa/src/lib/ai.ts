@@ -12,15 +12,27 @@ export async function parseOrderText(text: string, templateKey: string) {
 
     try {
         const prompt = `
-      You are a smart data extraction assistant.
-      Extract structured data from the following text based on the Template Key: "${templateKey}".
+      You are a professional copywriter and data extraction assistant for a printing company.
+      Your goal is to extract structured data from the provided text and format it for high-quality printing.
       
-      Text: "${text}"
+      Template Key: "${templateKey}"
+      Input Text: "${text}"
       
-      Output JSON only. Use the following keys based on the template:
-      - For "FINGERPRINTS": { name_main, date, place, body_full }
-      - For "WED_...": { names, date }
-      - Default: { summary }
+      Extraction Rules:
+      1. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the input text, suitable for printing on a single card. Fix typos, capitalize names, and use elegant spacing.
+      2. If the Template Key is "BIR_PIVO" (Beer invitation), extract these specific fields:
+         - "name_main": The name(s) of the person/people inviting.
+         - "date": Date and time of the event.
+         - "place": Location/Venue of the event.
+      3. For "FINGERPRINTS" (Odtlačkové obrazy):
+         - "name_main": Names of the couple or person.
+         - "date": Event date.
+         - "place": Event location.
+      4. For wedding templates ("WED_..."):
+         - "names": Names of the bridge and groom.
+         - "date": Wedding date and time.
+      
+      Output ONLY a valid JSON object.
     `;
 
         const completion = await openai.chat.completions.create({
@@ -30,7 +42,14 @@ export async function parseOrderText(text: string, templateKey: string) {
         });
 
         const content = completion.choices[0].message.content;
-        return JSON.parse(content || '{}');
+        const parsed = JSON.parse(content || '{}');
+
+        // Ensure body_full exists as a fallback if AI missed it
+        if (!parsed.body_full) {
+            parsed.body_full = text;
+        }
+
+        return parsed;
 
     } catch (error) {
         console.error('AI Processing Error:', error);

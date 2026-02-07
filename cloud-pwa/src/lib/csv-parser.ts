@@ -39,6 +39,31 @@ export async function parseCSV(
 export function extractEPOData(metaString: string) {
     const data: Record<string, string> = {};
 
+    // Try to parse as JSON first (common for WooCommerce tm_epo data)
+    try {
+        if (metaString.trim().startsWith('[') || metaString.trim().startsWith('{')) {
+            const parsed = JSON.parse(metaString);
+            if (Array.isArray(parsed)) {
+                // Join all text values from tm_epo structure
+                // Usually it's an array of objects: [{ name: '...', value: '...', ... }]
+                const cleanTexts: string[] = [];
+                parsed.forEach((item: any) => {
+                    if (item && item.value) {
+                        cleanTexts.push(`${item.name || ''}: ${item.value}`);
+                    } else if (typeof item === 'string') {
+                        cleanTexts.push(item);
+                    }
+                });
+                if (cleanTexts.length > 0) {
+                    data.text = cleanTexts.join('\n');
+                    return data;
+                }
+            }
+        }
+    } catch (e) {
+        // Not JSON, continue with regex
+    }
+
     // Regex patterns tailored for common WooCommerce export formats in Slovak/Czech
     const patterns = {
         text: /(?:Text oznámenia|Text oznámení|Pozdrav|Vlastný text)[:\s]+([^|\n]+)/i,

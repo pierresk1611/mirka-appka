@@ -29,7 +29,7 @@ export async function POST(request: Request) {
                 const type = detectType(row);
 
                 // Extract EPO from metadata
-                const metaData = row['Item Meta'] || row['Text oznámení'] || row['Content'] || '';
+                const metaData = row['tm_epo'] || row['Item Meta'] || row['Text oznámení'] || row['Content'] || '';
                 const epo = extractEPOData(metaData);
 
                 if (type === 'ORDER' || type === 'UNKNOWN') {
@@ -39,14 +39,30 @@ export async function POST(request: Request) {
                             ? `${row['Billing First Name']} ${row['Billing Last Name']}`.trim()
                             : (row['Customer Name'] || row['Title'] || 'Unknown Customer');
 
+                        const productName = row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN';
+
+                        // Template Matching Logic
+                        let templateKey = 'UNKNOWN';
+                        const lowerProductName = productName.toLowerCase();
+
+                        if (lowerProductName.includes('pivo')) {
+                            templateKey = 'BIR_PIVO';
+                        } else if (lowerProductName.includes('svadobn') || lowerProductName.includes('wedding')) {
+                            templateKey = 'WED_BASIC'; // Example fallback
+                        } else if (lowerProductName.includes('odtlač')) {
+                            templateKey = 'FINGERPRINTS';
+                        } else {
+                            templateKey = productName; // Fallback to product name as key
+                        }
+
                         await prisma.order.upsert({
                             where: { id: id },
                             update: {},
                             create: {
                                 id: id,
                                 customer_name: customerName,
-                                product_name_raw: row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN',
-                                template_key: row['Item Name'] || row['Product Title'] || row['Title'] || 'UNKNOWN', // Fallback
+                                product_name_raw: productName,
+                                template_key: templateKey,
                                 source_text: epo.text || metaData,
                                 quantity: parseInt(epo.quantity || row['Meta: Počet kusov'] || row['Quantity'] || '1'),
                                 material: epo.material || row['Meta: Typ média'] || row['Material'] || 'Papier',
