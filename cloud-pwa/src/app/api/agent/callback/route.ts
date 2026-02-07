@@ -18,8 +18,6 @@ export async function POST(request: Request) {
             where: { id: order_id },
             data: {
                 status: status, // DONE / ERROR
-                preview_url: preview_url,
-                agent_log: log ? JSON.stringify(log) : undefined
             }
         });
 
