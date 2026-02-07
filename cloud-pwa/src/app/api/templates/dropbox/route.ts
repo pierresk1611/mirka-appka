@@ -6,22 +6,35 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     try {
-        // 1. Get Access Token from DB
-        const setting = await prisma.settings.findUnique({
-            where: { key: 'DROPBOX_ACCESS_TOKEN' }
-        });
-        const accessToken = setting?.value;
+        const { searchParams } = new URL(request.url);
+        const tokenQuery = searchParams.get('token');
+        const pathQuery = searchParams.get('path');
+        const isTest = searchParams.get('test') === 'true';
+
+        // 1. Get Access Token (prefer query param for testing)
+        let accessToken = tokenQuery;
+        if (!accessToken) {
+            const setting = await prisma.settings.findUnique({
+                where: { key: 'DROPBOX_ACCESS_TOKEN' }
+            });
+            accessToken = setting?.value;
+        }
 
         if (!accessToken) {
             console.warn('Missing DROPBOX_ACCESS_TOKEN');
             return NextResponse.json({ error: 'Missing Dropbox Token', templates: [] }, { status: 400 });
         }
 
-        // 2. Get Root Path from DB
-        const pathSetting = await prisma.settings.findUnique({
-            where: { key: 'DROPBOX_PATH' }
-        });
-        let dropboxPath = pathSetting?.value?.trim() || '';
+        // 2. Get Root Path (prefer query param for testing)
+        let dropboxPath = pathQuery;
+        if (dropboxPath === null) {
+            const pathSetting = await prisma.settings.findUnique({
+                where: { key: 'DROPBOX_PATH' }
+            });
+            dropboxPath = pathSetting?.value?.trim() || '';
+        } else {
+            dropboxPath = dropboxPath.trim();
+        }
 
         // Fix: If user enters a local Mac path like /Users/apple/Dropbox/TEMPLATES, 
         // we strip the prefix to make it a valid Dropbox cloud path.
@@ -38,9 +51,6 @@ export async function GET(request: Request) {
 
         const dbx = new Dropbox({ accessToken });
         let folders: any[] = [];
-
-        const { searchParams } = new URL(request.url);
-        const isTest = searchParams.get('test') === 'true';
 
         try {
             console.log(`Listing folders in Dropbox: ${dropboxPath}`);

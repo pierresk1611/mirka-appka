@@ -151,10 +151,15 @@ export default function SettingsPage() {
     const handleTestDropbox = async () => {
         setTestingDropbox(true);
         try {
-            const res = await fetch('/api/templates/dropbox?test=true');
+            const params = new URLSearchParams({
+                test: 'true',
+                token: config.DROPBOX_ACCESS_TOKEN,
+                path: config.DROPBOX_PATH
+            });
+            const res = await fetch(`/api/templates/dropbox?${params.toString()}`);
             const data = await res.json();
             if (res.ok && data.success) alert(`✅ Dropbox Pripojený: Nájdených ${data.count} položiek.`);
-            else alert(`❌ Chyba: ${data.error}`);
+            else alert(`❌ Chyba: ${data.error || data.details}`);
         } catch (error) {
             alert('❌ Chyba: Network Error');
         } finally {
@@ -165,7 +170,11 @@ export default function SettingsPage() {
     const handleSyncDropbox = async () => {
         setSyncingDropbox(true);
         try {
-            const res = await fetch('/api/templates/dropbox');
+            const params = new URLSearchParams({
+                token: config.DROPBOX_ACCESS_TOKEN,
+                path: config.DROPBOX_PATH
+            });
+            const res = await fetch(`/api/templates/dropbox?${params.toString()}`);
             const data = await res.json();
             if (res.ok && data.success) alert(`✅ Sync Dokončený: ${data.count} šablón pripravených.`);
             else alert(`❌ Chyba Syncu: ${data.error}`);
