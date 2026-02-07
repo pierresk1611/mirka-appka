@@ -12,9 +12,9 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
         return mockParse(text, templateKey);
     }
 
-    const openai = new OpenAI({ apiKey: finalApiKey });
-
     try {
+        const openaiInstance = new OpenAI({ apiKey: finalApiKey });
+
         const prompt = `
       You are a professional copywriter and data extraction assistant for a printing company.
       Your goal is to extract structured data from the provided text and format it for high-quality printing.
@@ -39,7 +39,7 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
       Output ONLY a valid JSON object.
     `;
 
-        const completion = await openai.chat.completions.create({
+        const completion = await openaiInstance.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
             model: 'gpt-4o',
             response_format: { type: "json_object" },
@@ -50,45 +50,48 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
 
         // Ensure body_full exists as a fallback if AI missed it
         if (!parsed.body_full) {
-            parsed.body_full = "Fallback: " + text.substring(0, 200) + '...';
+            parsed.body_full = "Fallback: " + text.substring(0, 300) + '...';
         }
 
         return parsed;
 
     } catch (error: any) {
+        const errorMsg = error.message || String(error);
         console.error('--- AI Processing Error ---');
-        if (error.response) {
-            console.error('Status:', error.response.status);
-            console.error('Data:', error.response.data);
-        } else {
-            console.error('Message:', error.message);
-        }
-        return mockParse(text, templateKey); // Fallback
+        console.error(errorMsg);
+
+        return mockParse(text, templateKey, errorMsg);
     }
 }
 
-function mockParse(text: string, templateKey: string) {
+function mockParse(text: string, templateKey: string, errorMsg?: string) {
     // Better heuristic for mock summary
     let summary = text;
 
-    // If it looks like EPO data, we can try to extract the core text
+    // Extract key lines
     const lines = text.split('\n');
-    const interestingLines = lines.filter(l =>
-        l.toLowerCase().includes('text') ||
-        l.toLowerCase().includes('meno') ||
-        l.toLowerCase().includes('datum') ||
-        l.toLowerCase().includes('poznámka')
-    );
+    const filteredLines = lines.filter(l => {
+        const lower = l.toLowerCase();
+        return lower.includes(':') && (
+            lower.includes('text') ||
+            lower.includes('meno') ||
+            lower.includes('datum') ||
+            lower.includes('dátum') ||
+            lower.includes('miesto') ||
+            lower.includes('poznámka') ||
+            lower.includes('_tm')
+        );
+    });
 
-    if (interestingLines.length > 0) {
-        summary = interestingLines.join('\n');
+    if (filteredLines.length > 0) {
+        summary = filteredLines.join('\n');
     }
 
     return {
         source: 'mock',
-        name_main: 'MOCK NAME (AI Error)',
+        name_main: 'CHYBA EXTRAKCIE',
         date: '---',
         place: '---',
-        body_full: "CHYBA AI EXTRAKCIE. ZOBRAZUJEM PÔVODNÝ TEXT:\n\n" + summary
+        body_full: `CHYBA AI: ${errorMsg || 'Neznáma chyba'}\n\nZOBRAZUJEM PÔVODNÝ TEXT (VÝCUC):\n\n${summary}`
     };
 }

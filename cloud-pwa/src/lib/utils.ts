@@ -13,7 +13,7 @@ export function matchTemplate(productName: string): string {
     }
 
     if (normalized.includes('oslava') || normalized.includes('narodenin')) {
-        return 'BIR_PIVO'; // Map celebrations to beer template for now as requested
+        return 'BIR_PIVO';
     }
 
     if (normalized.includes('svadobn') || normalized.includes('wedding')) {
@@ -28,36 +28,41 @@ export function matchTemplate(productName: string): string {
 }
 
 export function formatMetadataValue(key: string, value: any): string | null {
-    // 1. Skip ONLY definitely useless tracking/internal keys
+    // 1. Skip definitely useless tracking/internal keys
     const internalKeysToSkip = [
-        'gtm4wp_product_data', '_tm_epo_counter', 'tcaddtocart'
+        'gtm4wp_product_data', '_tm_epo_counter', 'tcaddtocart', '_tm_epo',
+        '_tm_epo_options_prices', '_tm_epo_product_original_price'
     ];
 
     if (internalKeysToSkip.includes(key)) return null;
 
     // 2. Specialized parsing for Extra Product Options (EPO)
-    // EPO data can be in _tmcartepo_data or _tmdata or _tmcartfee_data
     if (
         (key.includes('_tm') || key === 'item_meta') &&
         (typeof value === 'object' || Array.isArray(value) || (typeof value === 'string' && (value.includes('[') || value.includes('{'))))
     ) {
         try {
             const parsed = (typeof value === 'string') ? JSON.parse(value) : value;
+
             if (Array.isArray(parsed)) {
-                // Flatten nested arrays if any
                 const flat = parsed.flat();
-                return flat.map((item: any) => {
+                const lines = flat.map((item: any) => {
                     if (item && typeof item === 'object') {
                         const name = item.name || item.section_label || item.key || '';
                         const val = item.value || item.key || '';
                         if (name && val && name !== val) return `${name}: ${val}`;
-                        if (val) return val;
+                        if (val && typeof val !== 'object') return val;
+                        if (name && typeof name !== 'object') return name;
                     }
-                    return String(item);
-                }).filter(Boolean).join(', ');
+                    return typeof item === 'object' ? JSON.stringify(item) : String(item);
+                }).filter(Boolean);
+
+                if (lines.length > 0) return lines.join(', ');
+            } else if (typeof parsed === 'object') {
+                return JSON.stringify(parsed);
             }
         } catch (e) {
-            // Fallback to normal stringification
+            // Fallback
         }
     }
 
@@ -65,12 +70,16 @@ export function formatMetadataValue(key: string, value: any): string | null {
     if (value !== null && typeof value !== 'undefined') {
         if (typeof value === 'object' || Array.isArray(value)) {
             try {
-                return JSON.stringify(value);
+                const json = JSON.stringify(value);
+                if (json === '{}' || json === '[]') return null;
+                return json;
             } catch (e) {
-                return String(value);
+                return '[Complex Data]';
             }
         }
-        return String(value);
+        const strVal = String(value);
+        if (strVal === '[object Object]') return '[Object Data]';
+        return strVal;
     }
 
     return null;
