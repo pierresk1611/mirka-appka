@@ -198,21 +198,46 @@ export default function OrderDetailView() {
     const handleTriggerAll = async () => {
         setSaving(true);
         try {
-            const res = await fetch('/api/agent/trigger-job', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId: id })
+            // Generate previews for all items
+            const previewPromises = order!.items.map(async (item) => {
+                try {
+                    const baseUrl = window.location.origin;
+                    const previewRes = await fetch(`${baseUrl}/api/preview/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ itemId: item.id })
+                    });
+
+                    if (previewRes.ok) {
+                        const previewUrl = `${baseUrl}/api/preview/generate?itemId=${item.id}`;
+                        await fetch(`/api/orders/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                itemId: item.id,
+                                ai_data: item.ai_data ? JSON.parse(item.ai_data) : {},
+                                preview_url: previewUrl
+                            })
+                        });
+                        return { success: true, itemId: item.id };
+                    } else {
+                        return { success: false, itemId: item.id };
+                    }
+                } catch (err) {
+                    console.error(`Preview generation failed for item ${item.id}:`, err);
+                    return { success: false, itemId: item.id };
+                }
             });
 
-            if (res.ok) {
-                alert('Celá sada bola odoslaná na spracovanie do Dropboxu!');
-                router.push('/');
-            } else {
-                const err = await res.json();
-                alert(`Chyba: ${err.error}`);
-            }
+            const results = await Promise.all(previewPromises);
+            const successCount = results.filter(r => r.success).length;
+
+            // Refresh order data to show new previews
+            await fetchOrder();
+
+            alert(`✅ Vygenerované ${successCount} z ${order!.items.length} náhľadov!`);
         } catch (error) {
-            alert('Chyba pripojenia');
+            alert('Chyba pri generovaní náhľadov');
         } finally {
             setSaving(false);
         }
@@ -264,7 +289,7 @@ export default function OrderDetailView() {
                             disabled={saving}
                             className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-xl hover:bg-slate-800 transition flex items-center gap-2"
                         >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Box className="w-4 h-4" />} Generovať Celú Sadu
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Box className="w-4 h-4" />} Vygenerovať Náhľady
                         </button>
                     </div>
                 </div>
