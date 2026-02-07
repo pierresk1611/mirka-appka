@@ -50,10 +50,15 @@ model OrderItem {
 }
 
 model TemplateConfig {
-  key      String @id
-  manifest String
-  mappings String? // JSON: { "Layer Name": "SYSTEM_KEY" }
-  status   String @default("READY")
+  key         String   @id // Original folder name
+  name        String?  // Alias (e.g. JSO_15)
+  manifest    String?  // JSON configuration
+  mappings    String?  // JSON: { "Layer Name": "SYSTEM_KEY" }
+  folder_path String?  // Recursive path in Dropbox
+  main_file   String?  // Path to selected PSD/AI
+  files       String?  // JSON array of available PSD/AI files
+  status      String   @default("NEW") // NEW, READY
+  created_at  DateTime @default(now())
 }
 
 model Settings {

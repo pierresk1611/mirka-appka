@@ -132,12 +132,25 @@ export default function OrderDetailView() {
         if (!activeItem) return;
         setSaving(true);
         try {
+            // 1. Save locally to DB
             const res = await fetch(`/api/templates/${activeItem.template_key}/mapping`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mappings })
             });
-            if (res.ok) alert('Mapovanie vrstiev bolo uložené pre túto šablónu.');
+
+            if (res.ok) {
+                // 2. Sync Manifest to Dropbox (New Feature)
+                const syncRes = await fetch(`/api/templates/${activeItem.template_key}/sync-manifest`, {
+                    method: 'POST'
+                });
+
+                if (syncRes.ok) {
+                    alert('Mapovanie uložené a manifest synchronizovaný na Dropbox! ✅');
+                } else {
+                    alert('Mapovanie uložené locally, ale synchronizácia na Dropbox zlyhala. ⚠️');
+                }
+            }
         } catch (e) {
             alert('Chyba pri ukladaní mapovania');
         } finally {

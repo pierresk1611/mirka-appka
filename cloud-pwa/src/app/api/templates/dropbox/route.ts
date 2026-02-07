@@ -50,64 +50,129 @@ export async function GET(request: Request) {
         }
 
         const dbx = new Dropbox({ accessToken });
-        let folders: any[] = [];
+        console.log('Testing Dropbox with path:', dropboxPath);
 
+        // 1. Recursive Search for PSD and AI files
+        // We look for files, then group them by their parent folder.
+        let allEntries: any[] = [];
         try {
-            console.log(`Listing folders in Dropbox: ${dropboxPath}`);
-            const response = await dbx.filesListFolder({ path: dropboxPath });
-            // Filter only folders
-            folders = response.result.entries.filter(entry => entry['.tag'] === 'folder');
+            const response = await dbx.filesListFolder({
+                path: dropboxPath,
+                recursive: true,
+                include_non_downloadable_files: false
+            });
+            allEntries = response.result.entries;
+
+            // Handle pagination if many files
+            let hasMore = response.result.has_more;
+            let cursor = response.result.cursor;
+            while (hasMore) {
+                const moreRes = await dbx.filesListFolderContinue({ cursor });
+                allEntries = [...allEntries, ...moreRes.result.entries];
+                hasMore = moreRes.result.has_more;
+                cursor = moreRes.result.cursor;
+            }
         } catch (dbxErr: any) {
-            console.error('Dropbox API Error:', dbxErr);
-            const errorMsg = dbxErr.error?.error_summary || dbxErr.message || 'Unknown Dropbox Error';
+            // Log the entire error object to the server console as requested
+            console.error('[Dropbox SDK Error Deep Log]', JSON.stringify(dbxErr, null, 2));
+
             return NextResponse.json({
-                error: 'Failed to fetch from Dropbox. Check Token and Path.',
-                details: errorMsg,
-                raw: dbxErr
-            }, { status: 502 });
+                error: 'Dropbox API Error',
+                status: dbxErr.status || 502,
+                details: dbxErr.error?.error_summary || dbxErr.message || 'Unknown error',
+                error_tag: dbxErr.error?.['.tag'] || 'unknown',
+                raw_error: dbxErr.error || dbxErr, // Return raw error for debugging
+                path_sent: dropboxPath
+            }, { status: dbxErr.status || 502 });
         }
+
+        // 2. Filter and Group by Folder
+        const templateGroups: Record<string, { path: string, assetFiles: string[] }> = {};
+        const ignorePatterns = ['OLD', 'ZALOHA', 'NA_OPRAVU', 'BACKUP'];
+
+        allEntries.forEach(entry => {
+            if (entry['.tag'] !== 'file') return;
+
+            const fileName = entry.name;
+            const filePath = entry.path_lower || '';
+            const isAsset = fileName.endsWith('.psd') || fileName.endsWith('.ai');
+
+            if (!isAsset) return;
+
+            // Check ignore patterns in the full path
+            const shouldIgnore = ignorePatterns.some(p => filePath.toUpperCase().includes(p));
+            if (shouldIgnore) return;
+
+            // Get parent folder path and name
+            const pathParts = filePath.split('/');
+            pathParts.pop(); // remove file name
+            const folderPath = pathParts.join('/');
+            const folderName = pathParts[pathParts.length - 1] || 'root';
+
+            if (!templateGroups[folderName]) {
+                templateGroups[folderName] = { path: folderPath, assetFiles: [] };
+            }
+            templateGroups[folderName].assetFiles.push(entry.path_display || entry.path_lower);
+        });
 
         if (isTest) {
             return NextResponse.json({
                 success: true,
-                count: folders.length,
-                message: 'Connection successful'
+                count: Object.keys(templateGroups).length,
+                message: `Scanner found ${Object.keys(templateGroups).length} potential templates.`
             });
         }
 
-        // 3. Sync to DB (TemplateConfig)
-        const syncedTemplates = [];
-        for (const folder of folders) {
-            const templateKey = folder.name; // ID according to folder name
+        // 3. Upsert to DB with Heuristics
+        const results = [];
+        for (const [folderName, info] of Object.entries(templateGroups)) {
+            // Heuristic for picking the main file:
+            // 1. Shortest name often means "oznamenie.psd" vs "oznamenie_final_v2_edit.psd"
+            // 2. Contains "oznamenie"
+            let mainFile = info.assetFiles[0];
+            let shortestLen = info.assetFiles[0].length;
 
-            // Check if exists
-            const existing = await prisma.templateConfig.findUnique({
-                where: { key: templateKey }
+            info.assetFiles.forEach(f => {
+                const name = f.split('/').pop()?.toLowerCase() || '';
+                if (name.includes('oznamenie') || name.includes('final')) {
+                    mainFile = f;
+                } else if (f.length < shortestLen) {
+                    mainFile = f;
+                    shortestLen = f.length;
+                }
             });
 
-            if (!existing) {
-                // Create new template entry
-                await prisma.templateConfig.create({
-                    data: {
-                        key: templateKey,
-                        manifest: '{}' // Empty manifest initially
-                    }
-                });
-                syncedTemplates.push({ key: templateKey, status: 'NEW' });
-            } else {
-                syncedTemplates.push({ key: templateKey, status: 'EXISTING' });
-            }
+            const template = await prisma.templateConfig.upsert({
+                where: { key: folderName },
+                update: {
+                    folder_path: info.path,
+                    files: JSON.stringify(info.assetFiles),
+                    // Only update main_file if it's currently NULL to avoid overwriting Mirka's manual choice
+                    ...(await prisma.templateConfig.findUnique({ where: { key: folderName } })?.main_file ? {} : { main_file: mainFile })
+                },
+                create: {
+                    key: folderName,
+                    name: folderName.replace(/_/g, ' '), // Pre-fill name as readable alias
+                    folder_path: info.path,
+                    main_file: mainFile,
+                    files: JSON.stringify(info.assetFiles),
+                    status: 'NEW'
+                }
+            });
+            results.push(template.key);
         }
 
         return NextResponse.json({
             success: true,
-            count: folders.length,
-            synced: syncedTemplates,
-            raw: folders
+            count: results.length,
+            message: `Import dokončený. Spracovaných ${results.length} šablón.`
         });
 
-    } catch (error) {
-        console.error('Dropbox Sync Error:', error);
-        return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('[Dropbox Scanner Fatal Error]', error);
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message || String(error)
+        }, { status: 500 });
     }
 }
