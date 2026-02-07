@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza180bzdleWkxamZad3VhY1NVNU9hU0oiLCJhcGlfa2V5IjoiMDFLR0hXNzVGMlM0TldGMENEWEJOWFNKWFQiLCJ0ZW5hbnRfaWQiOiJiZWQzZWJhMjE3N2MwNmFkNDZjMDM4YTZhMTUzMTMxYjlkNTk1M2FkOTlmMzQ5NTUzNjA1YTJhNjgwNWQyMTQ1IiwiaW50ZXJuYWxfc2VjcmV0IjoiYWM5Mjc0ZDctYzM4Mi00NmZlLTg1YzctYTAyOTY0MzEwZWQzIn0.9nGGQXjg1zNNM7LZRi-IjBcXMt55Erp36Aj3aHghrIU"
+  provider  = "postgresql"
+  url       = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza180bzdleWkxamZad3VhY1NVNU9hU0oiLCJhcGlfa2V5IjoiMDFLR0hXNzVGMlM0TldGMENEWEJOWFNKWFQiLCJ0ZW5hbnRfaWQiOiJiZWQzZWJhMjE3N2MwNmFkNDZjMDM4YTZhMTUzMTMxYjlkNTk1M2FkOTlmMzQ5NTUzNjA1YTJhNjgwNWQyMTQ1IiwiaW50ZXJuYWxfc2VjcmV0IjoiYWM5Mjc0ZDctYzM4Mi00NmZlLTg1YzctYTAyOTY0MzEwZWQzIn0.9nGGQXjg1zNNM7LZRi-IjBcXMt55Erp36Aj3aHghrIU"
   directUrl = "postgres://bed3eba2177c06ad46c038a6a153131b9d5953ad99f349553605a2a6805d2145:sk_4o7eyi1jfZwuacSU5OaSJ@db.prisma.io:5432/postgres?sslmode=require"
 }
 
@@ -13,34 +13,34 @@ model User {
   name          String
   email         String   @unique
   password_hash String
-  role          String   // SUPER_ADMIN, OPERATOR, VIEWER
-  status        String   @default("ACTIVE") // ACTIVE, INACTIVE
+  role          String
+  status        String   @default("ACTIVE")
   created_at    DateTime @default(now())
 }
 
 model Order {
-  id               Int      @id // Woo Order ID
+  id               Int      @id
   customer_name    String
-  product_name_raw String?
   template_key     String?
-  source_text      String   // Original text from Woo
-  quantity         Int      @default(1)
-  material         String?
-  ai_data          String?  // JSON stringified
-  status           String   @default("PENDING") // PENDING, AI_READY, GENERATING, DONE, ERROR
+  source_text      String
+  ai_data          String?
+  status           String   @default("PENDING")
   preview_url      String?
-  agent_log        String?  // JSON stringified
+  agent_log        String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
+  material         String?
+  product_name_raw String?
+  quantity         Int      @default(1)
 }
 
 model TemplateConfig {
   key      String @id
-  manifest String // JSON stringified layer mapping
+  manifest String
   status   String @default("READY")
 }
 
 model Settings {
   key   String @id
-  value String // Encrypted value
+  value String
 }
