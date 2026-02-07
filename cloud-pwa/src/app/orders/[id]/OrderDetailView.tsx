@@ -39,6 +39,10 @@ export default function OrderDetailView() {
     const [availableLayers, setAvailableLayers] = useState<string[]>([]); // Mocked or scanned
     const [showMapping, setShowMapping] = useState(false);
 
+    // Missing hooks
+    const [itemForms, setItemForms] = useState<Record<string, any>>({});
+    const [activeItemId, setActiveItemId] = useState<string | null>(null);
+
     const fetchOrder = async () => {
         try {
             const res = await fetch(`/api/orders/${id}`);
