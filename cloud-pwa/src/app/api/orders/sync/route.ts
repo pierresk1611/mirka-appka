@@ -66,20 +66,23 @@ export async function POST() {
                     // Check Meta for "Extra Product Options" if available in item.meta_data
                     if (item.meta_data && Array.isArray(item.meta_data)) {
                         for (const meta of item.meta_data) {
-                            let value = meta.value;
+                            let val = meta.value;
 
-                            // Fix [object Object] issue
-                            if (typeof value === 'object' && value !== null) {
-                                try {
-                                    // If it's the tm_epo complex data, we could try to extract it 
-                                    // but for source_text it's better to have a readable string
-                                    value = JSON.stringify(value);
-                                } catch (e) {
-                                    value = '[Complex Data]';
+                            // Robust fix for [object Object] issue
+                            if (val !== null && typeof val !== 'undefined') {
+                                if (typeof val === 'object' || Array.isArray(val)) {
+                                    try {
+                                        val = JSON.stringify(val);
+                                    } catch (e) {
+                                        val = String(val);
+                                    }
+                                } else if (typeof val === 'string' && val.includes('[object Object]')) {
+                                    // If we somehow got a string with [object Object], it's already corrupted
+                                    val = '[JSON Serialization Error in Metadata]';
                                 }
                             }
 
-                            allItemsText.push(`${meta.key}: ${value}`);
+                            allItemsText.push(`${meta.key}: ${val}`);
                         }
                     }
 

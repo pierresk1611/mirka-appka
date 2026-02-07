@@ -22,6 +22,13 @@ export async function GET(request: Request) {
             where: { key: 'DROPBOX_PATH' }
         });
         let dropboxPath = pathSetting?.value || '/TEMPLATES';
+
+        // Fix: If user enters a local Mac path like /Users/apple/Dropbox/TEMPLATES, 
+        // we strip the prefix to make it a valid Dropbox cloud path.
+        if (dropboxPath.includes('Dropbox/')) {
+            dropboxPath = '/' + dropboxPath.split('Dropbox/')[1];
+        }
+
         if (!dropboxPath.startsWith('/')) dropboxPath = '/' + dropboxPath;
 
         const dbx = new Dropbox({ accessToken });
@@ -37,7 +44,12 @@ export async function GET(request: Request) {
             folders = response.result.entries.filter(entry => entry['.tag'] === 'folder');
         } catch (dbxErr: any) {
             console.error('Dropbox API Error:', dbxErr);
-            return NextResponse.json({ error: 'Failed to fetch from Dropbox. Check Token and Path.', details: dbxErr }, { status: 502 });
+            const errorMsg = dbxErr.error?.error_summary || dbxErr.message || 'Unknown Dropbox Error';
+            return NextResponse.json({
+                error: 'Failed to fetch from Dropbox. Check Token and Path.',
+                details: errorMsg,
+                raw: dbxErr
+            }, { status: 502 });
         }
 
         if (isTest) {

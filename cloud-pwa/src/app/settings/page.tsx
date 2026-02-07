@@ -101,7 +101,8 @@ export default function SettingsPage() {
             if (res.ok && data.success) {
                 alert(`✅ Dropbox Pripojený: Nájdených ${data.count} položiek.`);
             } else {
-                alert(`❌ Chyba: ${data.error || 'Nepodarilo sa pripojiť k Dropboxu.'}`);
+                const details = data.details ? `\n\nDetaily: ${JSON.stringify(data.details)}` : '';
+                alert(`❌ Chyba: ${data.error || 'Nepodarilo sa pripojiť k Dropboxu.'}${details}`);
             }
         } catch (error) {
             alert('❌ Chyba: Network Error');
@@ -128,7 +129,8 @@ export default function SettingsPage() {
             if (res.ok && data.success) {
                 alert(`✅ Sync Dokončený: ${data.count} šablón pripravených.`);
             } else {
-                alert(`❌ Chyba Syncu: ${data.error || 'Neznáma chyba'}`);
+                const details = data.details ? `\n\nDetaily: ${JSON.stringify(data.details)}` : '';
+                alert(`❌ Chyba Syncu: ${data.error || 'Neznáma chyba'}${details}`);
             }
         } catch (error) {
             alert('❌ Chyba: Nepodarilo sa spojiť s API.');
