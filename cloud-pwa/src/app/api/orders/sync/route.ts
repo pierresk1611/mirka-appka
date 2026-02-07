@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
-import { matchTemplate } from '@/lib/utils';
+import { matchTemplate, formatMetadataValue } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -12,7 +12,7 @@ export async function POST() {
         // 1. Fetch Credentials from DB (Settings table)
         const settings = await prisma.settings.findMany({
             where: {
-                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS'] }
+                key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS', 'OPENAI_API_KEY'] }
             }
         });
 
@@ -35,7 +35,7 @@ export async function POST() {
 
         console.log(`Syncing orders from ${wooUrl}...`);
 
-        // 2. Fetch "processing" orders
+        // 3. Fetch "processing" orders
         const response = await WooCommerce.get("orders", {
             status: "processing",
             per_page: 20
@@ -50,45 +50,28 @@ export async function POST() {
                 const customerName = `${billing.first_name} ${billing.last_name}`;
 
                 // --- MAPPING LOGIC ---
-                // 1. Template Key from Line Items
                 let templateKey = 'UNKNOWN';
                 let allItemsText = [];
 
-                // Simple Logic: Take first item's product name to match template
                 if (line_items && line_items.length > 0) {
                     for (const item of line_items) {
                         const productName = item.name || '';
                         allItemsText.push(`Produkt: ${productName}`);
 
-                        // Check Meta for "Extra Product Options" if available in item.meta_data
                         if (item.meta_data && Array.isArray(item.meta_data)) {
                             for (const meta of item.meta_data) {
-                                let val = meta.value;
-
-                                // Robust fix for [object Object] issue
-                                if (val !== null && typeof val !== 'undefined') {
-                                    if (typeof val === 'object' || Array.isArray(val)) {
-                                        try {
-                                            val = JSON.stringify(val);
-                                        } catch (e) {
-                                            val = String(val);
-                                        }
-                                    } else if (typeof val === 'string' && val.includes('[object Object]')) {
-                                        // If we somehow got a string with [object Object], it's already corrupted
-                                        val = '[JSON Serialization Error in Metadata]';
-                                    }
+                                const formatted = formatMetadataValue(meta.key, meta.value);
+                                if (formatted) {
+                                    allItemsText.push(`${meta.key}: ${formatted}`);
                                 }
-
-                                allItemsText.push(`${meta.key}: ${val}`);
                             }
                         }
 
-                        // Template Matching (Consistent with CSV import)
                         const matchedKey = matchTemplate(productName);
                         if (matchedKey !== 'UNKNOWN') {
                             templateKey = matchedKey;
                         } else if (templateKey === 'UNKNOWN') {
-                            templateKey = productName; // Fallback
+                            templateKey = productName;
                         }
                     }
                 }
@@ -114,7 +97,6 @@ export async function POST() {
                 });
 
                 // 4. Trigger AI Extraction automatically
-                // If it's AI_READY and has no ai_data yet (or re-syncing)
                 if (savedOrder.status === 'AI_READY') {
                     try {
                         console.log(`AI Processing for Order #${id}...`);

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
-import { matchTemplate } from '@/lib/utils';
+import { matchTemplate, formatMetadataValue } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,15 +51,10 @@ export async function POST(
 
             if (item.meta_data && Array.isArray(item.meta_data)) {
                 for (const meta of item.meta_data) {
-                    let val = meta.value;
-                    if (val !== null && typeof val !== 'undefined') {
-                        if (typeof val === 'object' || Array.isArray(val)) {
-                            try { val = JSON.stringify(val); } catch (e) { val = String(val); }
-                        } else if (typeof val === 'string' && val.includes('[object Object]')) {
-                            val = '[JSON Serialization Error]';
-                        }
+                    const formatted = formatMetadataValue(meta.key, meta.value);
+                    if (formatted) {
+                        allItemsText.push(`${meta.key}: ${formatted}`);
                     }
-                    allItemsText.push(`${meta.key}: ${val}`);
                 }
             }
 
