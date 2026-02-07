@@ -67,12 +67,13 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
 
 function mockParse(text: string, templateKey: string, errorMsg?: string) {
     // Better heuristic for mock summary
-    let summary = text;
-
-    // Extract key lines
     const lines = text.split('\n');
     const filteredLines = lines.filter(l => {
         const lower = l.toLowerCase();
+        // Keep lines that look like user content or important options
+        // But skip the raw JSON metadata lines in the summary
+        if (lower.startsWith('_tm') || lower.startsWith('gtm4wp')) return false;
+
         return lower.includes(':') && (
             lower.includes('text') ||
             lower.includes('meno') ||
@@ -80,19 +81,17 @@ function mockParse(text: string, templateKey: string, errorMsg?: string) {
             lower.includes('dátum') ||
             lower.includes('miesto') ||
             lower.includes('poznámka') ||
-            lower.includes('_tm')
+            lower.includes('produkt')
         );
     });
 
-    if (filteredLines.length > 0) {
-        summary = filteredLines.join('\n');
-    }
+    const summary = filteredLines.length > 0 ? filteredLines.join('\n') : "Obsah sa nepodarilo automaticky vyextrahovať.";
 
     return {
         source: 'mock',
         name_main: 'CHYBA EXTRAKCIE',
         date: '---',
         place: '---',
-        body_full: `CHYBA AI: ${errorMsg || 'Neznáma chyba'}\n\nZOBRAZUJEM PÔVODNÝ TEXT (VÝCUC):\n\n${summary}`
+        body_full: `CHYBA AI: ${errorMsg || 'Neznáma chyba'}\n\nUpozornenie: Vaše OpenAI konto pravdepodobne nemá kredit (Chyba 429).\n\nZOBRAZUJEM PÔVODNÝ TEXT:\n\n${summary}`
     };
 }

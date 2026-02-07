@@ -31,7 +31,8 @@ export function formatMetadataValue(key: string, value: any): string | null {
     // 1. Skip definitely useless tracking/internal keys
     const internalKeysToSkip = [
         'gtm4wp_product_data', '_tm_epo_counter', 'tcaddtocart', '_tm_epo',
-        '_tm_epo_options_prices', '_tm_epo_product_original_price'
+        '_tm_epo_options_prices', '_tm_epo_product_original_price',
+        '_tmdata', '_tmpost_data', '_tmcp_post_fields'
     ];
 
     if (internalKeysToSkip.includes(key)) return null;
