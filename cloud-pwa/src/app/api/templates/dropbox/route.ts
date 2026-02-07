@@ -142,13 +142,19 @@ export async function GET(request: Request) {
                 }
             });
 
+            // Check if we already have a main_file selected by Mirka
+            const existing = await prisma.templateConfig.findUnique({
+                where: { key: folderName },
+                select: { main_file: true }
+            });
+
             const template = await prisma.templateConfig.upsert({
                 where: { key: folderName },
                 update: {
                     folder_path: info.path,
                     files: JSON.stringify(info.assetFiles),
                     // Only update main_file if it's currently NULL to avoid overwriting Mirka's manual choice
-                    ...(await prisma.templateConfig.findUnique({ where: { key: folderName } })?.main_file ? {} : { main_file: mainFile })
+                    ...(existing?.main_file ? {} : { main_file: mainFile })
                 },
                 create: {
                     key: folderName,
