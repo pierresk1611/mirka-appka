@@ -31,7 +31,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     try {
         const { id } = await params; // Order ID (UUID)
         const body = await request.json();
-        const { itemId, ai_data, status } = body;
+        const { itemId, ai_data, status, preview_url } = body;
 
         if (!itemId) {
             return NextResponse.json({ error: 'Missing itemId' }, { status: 400 });
@@ -40,6 +40,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         const dataToUpdate: any = {};
         if (ai_data) dataToUpdate.ai_data = JSON.stringify(ai_data);
         if (status) dataToUpdate.status = status;
+        if (preview_url !== undefined) dataToUpdate.preview_url = preview_url;
 
         const updatedItem = await prisma.orderItem.update({
             where: { id: itemId },
