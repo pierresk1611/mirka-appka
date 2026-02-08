@@ -13,6 +13,7 @@ interface OrderItem {
     ai_data: string | null;
     status: string;
     preview_url?: string;
+    quantity: number;
 }
 
 interface Order {
