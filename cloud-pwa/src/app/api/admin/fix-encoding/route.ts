@@ -26,47 +26,68 @@ export async function POST(request: Request) {
 
         let fixedCount = 0;
         const log = [];
+        const BATCH_SIZE = 50;
 
         // 1. Fix ProductMetadata
-        const metadata = await prisma.productMetadata.findMany();
+        let skip = 0;
+        while (true) {
+            const metadata = await prisma.productMetadata.findMany({
+                take: BATCH_SIZE,
+                skip: skip,
+                orderBy: { id: 'asc' } // Stable ordering for pagination
+            });
 
-        for (const item of metadata) {
-            const fixedTitle = fixEncoding(item.csv_title);
-            const fixedContent = fixEncoding(item.html_content);
-            const fixedName = fixedTitle && item.csv_title !== fixedTitle;
+            if (metadata.length === 0) break;
 
-            if (fixedName) {
-                log.push(`[METADATA] ${item.csv_title} -> ${fixedTitle}`);
+            for (const item of metadata) {
+                const fixedTitle = fixEncoding(item.csv_title);
+                const fixedContent = fixEncoding(item.html_content);
+                const fixedName = fixedTitle && item.csv_title !== fixedTitle;
 
-                if (!dryRun && fixedTitle) {
-                    await prisma.productMetadata.update({
-                        where: { id: item.id },
-                        data: {
-                            csv_title: fixedTitle,
-                            html_content: fixedContent || item.html_content
-                        }
-                    });
+                if (fixedName) {
+                    log.push(`[METADATA] ${item.csv_title} -> ${fixedTitle}`);
+
+                    if (!dryRun && fixedTitle) {
+                        await prisma.productMetadata.update({
+                            where: { id: item.id },
+                            data: {
+                                csv_title: fixedTitle,
+                                html_content: fixedContent || item.html_content
+                            }
+                        });
+                    }
+                    fixedCount++;
                 }
-                fixedCount++;
             }
+            skip += BATCH_SIZE;
         }
 
         // 2. Fix Templates (name)
-        // Scan all templates to be safe, as old imports might not have is_in_eshop set
-        const templates = await prisma.templateConfig.findMany();
+        // Scan all templates to be safe
+        skip = 0;
+        while (true) {
+            const templates = await prisma.templateConfig.findMany({
+                take: BATCH_SIZE,
+                skip: skip,
+                orderBy: { key: 'asc' }
+            });
 
-        for (const t of templates) {
-            const fixedName = fixEncoding(t.name);
-            if (t.name && fixedName && t.name !== fixedName) {
-                log.push(`[TEMPLATE] ${t.name} -> ${fixedName}`);
-                if (!dryRun) {
-                    await prisma.templateConfig.update({
-                        where: { key: t.key },
-                        data: { name: fixedName }
-                    });
+            if (templates.length === 0) break;
+
+            for (const t of templates) {
+                const fixedName = fixEncoding(t.name);
+                if (t.name && fixedName && t.name !== fixedName) {
+                    log.push(`[TEMPLATE] ${t.name} -> ${fixedName}`);
+                    if (!dryRun) {
+                        await prisma.templateConfig.update({
+                            where: { key: t.key },
+                            data: { name: fixedName }
+                        });
+                    }
+                    fixedCount++;
                 }
-                fixedCount++;
             }
+            skip += BATCH_SIZE;
         }
 
         return NextResponse.json({
@@ -77,6 +98,7 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
+        console.error("Fix Encoding Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
