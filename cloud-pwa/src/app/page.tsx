@@ -13,15 +13,11 @@ interface OrderItem {
   status: string;
   quantity: number;
   product_metadata?: {
+    id: string;
     pricing_json?: string;
+    csv_title?: string;
+    sku?: string;
   };
-};
-product_metadata ?: {
-  id: string;
-  pricing_json?: string;
-  csv_title?: string;
-  sku?: string;
-};
 }
 
 interface Order {
