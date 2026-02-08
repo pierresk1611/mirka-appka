@@ -14,6 +14,10 @@ interface OrderItem {
     status: string;
     preview_url?: string;
     quantity: number;
+    template?: {
+        image_url?: string;
+        pricing_json?: string;
+    };
 }
 
 interface Order {
@@ -497,13 +501,13 @@ export default function OrderDetailView() {
                 <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative group">
                     <div className="absolute top-4 left-4 z-10">
                         <span className="bg-slate-900/80 text-white text-[9px] font-black uppercase px-2 py-1 rounded backdrop-blur border border-slate-700 tracking-widest">
-                            Náhľad Výstupu
+                            {activeItem?.preview_url ? 'Náhľad Výstupu (AI)' : 'Náhľad Šablóny (CSV)'}
                         </span>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
-                        {activeItem?.preview_url ? (
+                        {activeItem?.preview_url || activeItem?.template?.image_url ? (
                             <img
-                                src={activeItem.preview_url}
+                                src={activeItem.preview_url || activeItem?.template?.image_url}
                                 alt="Preview"
                                 className="max-w-full max-h-full shadow-2xl rounded-sm border-2 border-white/20 transform group-hover:scale-105 transition duration-1000"
                             />
