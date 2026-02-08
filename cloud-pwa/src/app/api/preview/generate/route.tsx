@@ -94,18 +94,11 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const itemId = searchParams.get('itemId');
+        const debug = searchParams.get('debug');
 
         if (itemId === 'test') {
             return new ImageResponse(
-                <div style={{
-                    fontSize: 40,
-                    background: 'white',
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
+                <div style={{ fontSize: 40, background: 'white', padding: 20 }}>
                     Hello from Vercel OG!
                 </div>,
                 { width: 400, height: 200 }
@@ -116,10 +109,23 @@ export async function GET(req: NextRequest) {
             return new Response('Missing itemId', { status: 400 });
         }
 
+        if (debug === 'true') {
+            const item = await prisma.orderItem.findUnique({
+                where: { id: itemId }
+            });
+            return new Response(JSON.stringify({
+                found: !!item,
+                name: item?.product_name_raw,
+                hasAiData: !!item?.ai_data
+            }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         return await generatePreview(itemId);
     } catch (error: any) {
         console.error('Preview generation failed:', error);
-        return new Response(error.message, { status: 500 });
+        return new Response(`Error: ${error.message}`, { status: 500 });
     }
 }
 
