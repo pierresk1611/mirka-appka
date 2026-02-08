@@ -6,37 +6,88 @@ import BIR_PIVO from '@/components/preview-templates/BIR_PIVO';
 // Note: Removed 'edge' runtime because Prisma requires Node.js runtime
 
 async function generatePreview(itemId: string) {
-    // Fetch order item data
-    const item = await prisma.orderItem.findUnique({
-        where: { id: itemId }
-    });
+    console.log(`[Preview] Starting generation for ${itemId}`);
 
-    if (!item || !item.ai_data) {
-        throw new Error('Item not found or AI data missing');
+    // Fetch order item data
+    let item;
+    try {
+        item = await prisma.orderItem.findUnique({
+            where: { id: itemId },
+            include: { template: true }
+        });
+    } catch (dbError: any) {
+        console.error(`[Preview] DB Error: ${dbError.message}`);
+        throw new Error(`Database error: ${dbError.message}`);
     }
 
-    const aiData = JSON.parse(item.ai_data);
+    if (!item) {
+        console.error(`[Preview] Item not found: ${itemId}`);
+        throw new Error('Item not found');
+    }
+
+    if (!item.ai_data) {
+        console.error(`[Preview] AI data missing for: ${itemId}`);
+        throw new Error('AI data missing');
+    }
+
+    let aiData;
+    try {
+        aiData = JSON.parse(item.ai_data);
+    } catch (parseError: any) {
+        console.error(`[Preview] JSON Parse Error for ${itemId}: ${parseError.message}`);
+        throw new Error(`AI data parse error: ${parseError.message}`);
+    }
+
     const templateKey = item.template_key;
+    console.log(`[Preview] Using template: ${templateKey}`);
 
     // Select template component based on template_key
-    let TemplateComponent;
-    switch (templateKey) {
-        case 'BIR_PIVO':
-            TemplateComponent = BIR_PIVO;
-            break;
-        default:
-            // Fallback generic template
-            TemplateComponent = BIR_PIVO; // TODO: Create generic template
-    }
+    // For now, only BIR_PIVO is implemented
+    let TemplateComponent = BIR_PIVO;
 
-    // Generate image using @vercel/og
-    return new ImageResponse(
-        <TemplateComponent {...aiData} />,
-        {
-            width: 1200,
-            height: 1600,
-        }
-    );
+    try {
+        console.log(`[Preview] Creating ImageResponse for ${itemId}`);
+        return new ImageResponse(
+            (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#1a1a1a',
+                    padding: '80px',
+                    color: '#f5e6d3',
+                }}>
+                    <TemplateComponent {...aiData} />
+                </div>
+            ),
+            {
+                width: 1200,
+                height: 1600,
+            }
+        );
+    } catch (genError: any) {
+        console.error(`[Preview] Generation Loop Error: ${genError.message}`);
+        // Fallback to a very simple image if the component fails
+        return new ImageResponse(
+            (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'white',
+                    padding: '40px',
+                    fontSize: '40px'
+                }}>
+                    <h1>Preview Error</h1>
+                    <p>Item: {item.product_name_raw}</p>
+                    <p>Error: {genError.message}</p>
+                </div>
+            ),
+            { width: 800, height: 600 }
+        );
+    }
 }
 
 export async function GET(req: NextRequest) {
