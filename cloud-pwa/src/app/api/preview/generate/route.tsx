@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og';
+import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import BIR_PIVO from '@/components/preview-templates/BIR_PIVO';
