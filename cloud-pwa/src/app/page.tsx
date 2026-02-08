@@ -5,11 +5,12 @@ import AppLayout from '../components/AppLayout';
 import Link from 'next/link';
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
-id: string;
-product_name_raw: string;
-template_key: string;
-status: string;
-quantity: number;
+interface OrderItem {
+  id: string;
+  product_name_raw: string;
+  template_key: string;
+  status: string;
+  quantity: number;
 }
 
 interface Order {
@@ -122,144 +123,145 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <thead>
-              <tr className="bg-gray-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b">
-                <th className="p-4">Zdroj</th>
-                <th className="p-4">ID</th>
-                <th className="p-4">Zákazník</th>
-                <th className="p-4">Dátum</th>
-                <th className="p-4">Položky v sade</th>
-                <th className="p-4 text-center">Počet</th>
-                <th className="p-4 text-right">Cena / ks</th>
-                <th className="p-4 text-right">Spolu</th>
-                <th className="p-4 text-right">Akcia</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
-              {orders.length === 0 ? (
-                <tr><td colSpan={9} className="p-12 text-center text-slate-400 italic">Žiadne objednávky. Kliknite na "Sync".</td></tr>
-              ) : orders.map(order => {
-                // Calculate prices for all items
-                const itemDetails = order.items.map(item => {
-                  const pricingJson = (item as any).template?.pricing_json; // Cast as any because interface might be lagging
-                  if (!pricingJson) return { qty: item.quantity, unit: null, total: null };
+            <table className="hidden md:table w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b">
+                  <th className="p-4">Zdroj</th>
+                  <th className="p-4">ID</th>
+                  <th className="p-4">Zákazník</th>
+                  <th className="p-4">Dátum</th>
+                  <th className="p-4">Položky v sade</th>
+                  <th className="p-4 text-center">Počet</th>
+                  <th className="p-4 text-right">Cena / ks</th>
+                  <th className="p-4 text-right">Spolu</th>
+                  <th className="p-4 text-right">Akcia</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-sm">
+                {orders.length === 0 ? (
+                  <tr><td colSpan={9} className="p-12 text-center text-slate-400 italic">Žiadne objednávky. Kliknite na "Sync".</td></tr>
+                ) : orders.map(order => {
+                  // Calculate prices for all items
+                  const itemDetails = order.items.map(item => {
+                    const pricingJson = (item as any).template?.pricing_json; // Cast as any because interface might be lagging
+                    if (!pricingJson) return { qty: item.quantity, unit: null, total: null };
 
-                  try {
-                    const pricing: Record<string, number> = JSON.parse(pricingJson);
-                    let unitPrice = 0;
-                    for (const [range, price] of Object.entries(pricing)) {
-                      const parts = range.split('-');
-                      if (parts.length === 2) {
-                        const min = parseInt(parts[0].replace(/\D/g, ''));
-                        const max = parseInt(parts[1].replace(/\D/g, ''));
-                        if (item.quantity >= min && item.quantity <= max) {
-                          unitPrice = price;
-                          break;
-                        }
-                      } else {
-                        const val = parseInt(range.replace(/\D/g, ''));
-                        if (range.includes('+') && item.quantity >= val) {
-                          unitPrice = price;
-                          break;
+                    try {
+                      const pricing: Record<string, number> = JSON.parse(pricingJson);
+                      let unitPrice = 0;
+                      for (const [range, price] of Object.entries(pricing)) {
+                        const parts = range.split('-');
+                        if (parts.length === 2) {
+                          const min = parseInt(parts[0].replace(/\D/g, ''));
+                          const max = parseInt(parts[1].replace(/\D/g, ''));
+                          if (item.quantity >= min && item.quantity <= max) {
+                            unitPrice = price;
+                            break;
+                          }
+                        } else {
+                          const val = parseInt(range.replace(/\D/g, ''));
+                          if (range.includes('+') && item.quantity >= val) {
+                            unitPrice = price;
+                            break;
+                          }
                         }
                       }
+                      return {
+                        qty: item.quantity,
+                        unit: unitPrice > 0 ? unitPrice : null,
+                        total: unitPrice > 0 ? unitPrice * item.quantity : null
+                      };
+                    } catch (e) {
+                      return { qty: item.quantity, unit: null, total: null };
                     }
-                    return {
-                      qty: item.quantity,
-                      unit: unitPrice > 0 ? unitPrice : null,
-                      total: unitPrice > 0 ? unitPrice * item.quantity : null
-                    };
-                  } catch (e) {
-                    return { qty: item.quantity, unit: null, total: null };
-                  }
-                });
+                  });
 
-                return (
-                  <tr key={order.id} className="hover:bg-blue-50/50 transition">
-                    <td className="p-4">
-                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold border border-blue-100">
-                        {order.store.name}
-                      </span>
-                    </td>
-                    <td className="p-4 font-bold text-slate-900 font-mono">#{order.woo_id}</td>
-                    <td className="p-4 font-medium text-slate-700">{order.customer_name}</td>
-                    <td className="p-4 text-xs text-slate-500">
+                  return (
+                    <tr key={order.id} className="hover:bg-blue-50/50 transition">
+                      <td className="p-4">
+                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold border border-blue-100">
+                          {order.store.name}
+                        </span>
+                      </td>
+                      <td className="p-4 font-bold text-slate-900 font-mono">#{order.woo_id}</td>
+                      <td className="p-4 font-medium text-slate-700">{order.customer_name}</td>
+                      <td className="p-4 text-xs text-slate-500">
+                        {new Date(order.created_at).toLocaleDateString('sk-SK')}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-col gap-1">
+                          {order.items.map(item => (
+                            <div key={item.id} className="flex items-center gap-2">
+                              {getStatusBadge(item.status)}
+                              <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.product_name_raw}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+
+                      {/* Quantity Column */}
+                      <td className="p-4 text-center font-mono text-slate-600">
+                        {itemDetails.map(d => d.qty + ' ks').join(' / ')}
+                      </td>
+
+                      {/* Unit Price Column */}
+                      <td className="p-4 text-right font-mono text-slate-600">
+                        {itemDetails.map(d => d.unit ? d.unit.toFixed(2) + ' €' : '-').join(' / ')}
+                      </td>
+
+                      {/* Total Price Column */}
+                      <td className="p-4 text-right font-bold text-slate-900">
+                        {itemDetails.map(d => d.total ? d.total.toFixed(2) + ' €' : '-').join(' / ')}
+                      </td>
+
+                      <td className="p-4 text-right">
+                        <Link href={`/orders/${order.id}`}>
+                          <button className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition shadow-sm font-bold text-xs">
+                            Upraviť Sadu
+                          </button>
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+
+            {/* MOBILE VIEW */}
+            <div className="md:hidden space-y-4 p-4 bg-gray-50">
+              {orders.map((order) => (
+                <div key={order.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">{order.store.name}</div>
+                      <span className="text-lg font-bold text-slate-800">#{order.woo_id}</span>
+                      <div className="text-sm font-medium text-slate-500">{order.customer_name}</div>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
                       {new Date(order.created_at).toLocaleDateString('sk-SK')}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col gap-1">
-                        {order.items.map(item => (
-                          <div key={item.id} className="flex items-center gap-2">
-                            {getStatusBadge(item.status)}
-                            <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.product_name_raw}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-
-                    {/* Quantity Column */}
-                    <td className="p-4 text-center font-mono text-slate-600">
-                      {itemDetails.map(d => d.qty + ' ks').join(' / ')}
-                    </td>
-
-                    {/* Unit Price Column */}
-                    <td className="p-4 text-right font-mono text-slate-600">
-                      {itemDetails.map(d => d.unit ? d.unit.toFixed(2) + ' €' : '-').join(' / ')}
-                    </td>
-
-                    {/* Total Price Column */}
-                    <td className="p-4 text-right font-bold text-slate-900">
-                      {itemDetails.map(d => d.total ? d.total.toFixed(2) + ' €' : '-').join(' / ')}
-                    </td>
-
-                    <td className="p-4 text-right">
-                      <Link href={`/orders/${order.id}`}>
-                        <button className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition shadow-sm font-bold text-xs">
-                          Upraviť Sadu
-                        </button>
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-
-        {/* MOBILE VIEW */}
-        <div className="md:hidden space-y-4 p-4 bg-gray-50">
-          {orders.map((order) => (
-            <div key={order.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">{order.store.name}</div>
-                  <span className="text-lg font-bold text-slate-800">#{order.woo_id}</span>
-                  <div className="text-sm font-medium text-slate-500">{order.customer_name}</div>
-                </div>
-                <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
-                  {new Date(order.created_at).toLocaleDateString('sk-SK')}
-                </div>
-              </div>
-
-              <div className="space-y-2 mb-6 bg-gray-50 p-3 rounded-lg">
-                {order.items.map(item => (
-                  <div key={item.id} className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-slate-700 truncate">{item.product_name_raw}</span>
-                    {getStatusBadge(item.status)}
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <Link href={`/orders/${order.id}`} className="block">
-                <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800">
-                  Otvoriť Sadu
-                </button>
-              </Link>
+                  <div className="space-y-2 mb-6 bg-gray-50 p-3 rounded-lg">
+                    {order.items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-700 truncate">{item.product_name_raw}</span>
+                        {getStatusBadge(item.status)}
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link href={`/orders/${order.id}`} className="block">
+                    <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800">
+                      Otvoriť Sadu
+                    </button>
+                  </Link>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </>
+          </>
         )}
-    </div>
+      </div>
     </AppLayout >
   );
 }
