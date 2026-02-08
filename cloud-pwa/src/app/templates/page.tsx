@@ -15,7 +15,10 @@ import {
     Upload,
     FileSpreadsheet,
     Image as ImageIcon,
-    Wrench
+    Wrench,
+    Wand2,
+    Zap,
+    AlertTriangle
 } from 'lucide-react';
 
 interface Template {
@@ -42,6 +45,8 @@ export default function TemplatesPage() {
     const [repairing, setRepairing] = useState(false);
     const [repairProgress, setRepairProgress] = useState(0);
     const [repairStatus, setRepairStatus] = useState('');
+
+    const [autolinking, setAutolinking] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +137,22 @@ export default function TemplatesPage() {
         };
 
         xhr.send(formData);
+    };
+
+    const handleAutoLink = async () => {
+        setAutolinking(true);
+        try {
+            const res = await fetch('/api/templates/auto-link', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message);
+                await fetchTemplates();
+            }
+        } catch (e) {
+            alert('Chyba pri automatickom párovaní');
+        } finally {
+            setAutolinking(false);
+        }
     };
 
     const startEdit = (t: Template) => {
@@ -287,6 +308,15 @@ export default function TemplatesPage() {
                     </button>
 
                     <button
+                        onClick={handleAutoLink}
+                        disabled={autolinking}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 transition shadow-lg disabled:opacity-50"
+                    >
+                        {autolinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                        {autolinking ? 'Párujem...' : 'Auto-Link Codes'}
+                    </button>
+
+                    <button
                         onClick={handleSync}
                         disabled={syncing}
                         className="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition shadow-lg disabled:opacity-50"
@@ -340,6 +370,7 @@ export default function TemplatesPage() {
                                             <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition flex items-center gap-2">
                                                 {template.name || template.key}
                                                 {isVerified && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                                                {template.main_file && <Zap className="w-4 h-4 text-blue-500 fill-blue-500" />}
                                             </h3>
                                         )}
                                         <div className="flex items-center gap-2 mt-0.5">
@@ -386,17 +417,19 @@ export default function TemplatesPage() {
                                             ))}
                                         </select>
                                     ) : (
-                                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${template.main_file ? 'bg-green-50 border-green-100' : 'bg-orange-50 border-orange-100 animate-pulse'}`}>
                                             <div className="flex items-center gap-3 overflow-hidden">
-                                                <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg text-blue-500 shadow-sm flex-shrink-0">
+                                                <div className={`w-8 h-8 flex items-center justify-center rounded-lg shadow-sm flex-shrink-0 ${template.main_file ? 'bg-white text-green-600' : 'bg-white text-orange-600'}`}>
                                                     <FileType className="w-4 h-4" />
                                                 </div>
-                                                <span className="text-xs font-mono text-slate-600 truncate">
-                                                    {template.main_file ? template.main_file.split('/').pop() : 'Nenastavené'}
+                                                <span className={`text-xs font-mono truncate ${template.main_file ? 'text-green-700' : 'text-orange-700 font-bold'}`}>
+                                                    {template.main_file ? template.main_file.split('/').pop() : 'CHÝBA DESIGN (Nenastavené)'}
                                                 </span>
                                             </div>
-                                            {template.main_file && (
+                                            {template.main_file ? (
                                                 <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                            ) : (
+                                                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
                                             )}
                                         </div>
                                     )}

@@ -18,6 +18,55 @@ export function extractTemplateId(text: string): string | null {
     return null;
 }
 
+/**
+ * Extracts quantity from WooCommerce item metadata.
+ * Looks for specific keys like 'Počet', 'Množstvo', 'Quantity' or '_tmcartepo_data'.
+ */
+export function extractQuantityFromMetadata(metaData: any[], defaultQty: number = 1): number {
+    if (!metaData || !Array.isArray(metaData)) return defaultQty;
+
+    // 1. Look for obvious keys directly
+    const directKeys = ['počet', 'množstvo', 'quantity', 'pocet', 'mnozstvo', 'qty'];
+    for (const meta of metaData) {
+        const key = String(meta.key || '').toLowerCase();
+        if (directKeys.some(dk => key.includes(dk))) {
+            const val = parseInt(String(meta.value).replace(/\D/g, ''));
+            if (!isNaN(val) && val > 0) return val;
+        }
+    }
+
+    // 2. Look inside _tmcartepo_data or item_meta if it's a stringified JSON
+    const complexKeys = ['_tmcartepo_data', 'item_meta', '_tm_epo'];
+    for (const meta of metaData) {
+        if (complexKeys.includes(meta.key)) {
+            try {
+                const parsed = typeof meta.value === 'string' ? JSON.parse(meta.value) : meta.value;
+                if (Array.isArray(parsed)) {
+                    for (const entry of parsed) {
+                        const name = String(entry.name || entry.key || '').toLowerCase();
+                        if (directKeys.some(dk => name.includes(dk))) {
+                            const val = parseInt(String(entry.value).replace(/\D/g, ''));
+                            if (!isNaN(val) && val > 0) return val;
+                        }
+                    }
+                } else if (typeof parsed === 'object') {
+                    // Try to find any property that looks like quantity
+                    for (const [k, v] of Object.entries(parsed)) {
+                        if (directKeys.some(dk => k.toLowerCase().includes(dk))) {
+                            const val = parseInt(String(v).replace(/\D/g, ''));
+                            if (!isNaN(val) && val > 0) return val;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
+        }
+    }
+
+    return defaultQty;
+}
+
 export function matchTemplate(productName: string): string {
     // 1. Strict ID Match (Highest Priority)
     const strictId = extractTemplateId(productName);

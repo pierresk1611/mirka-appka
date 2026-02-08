@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
-import { matchTemplate, formatMetadataValue, extractTemplateId } from '@/lib/utils';
+import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityFromMetadata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +45,8 @@ export async function POST(
             const allMetadata = item.meta_data.map((m: any) => `${m.key}: ${formatMetadataValue(m.key, m.value)}`).join('\n');
             const sourceText = `Produkt: ${productName}\n${allMetadata}\nPoznámka: ${order.customer_note || ''}`;
 
+            const actualQty = extractQuantityFromMetadata(item.meta_data, item.quantity);
+
             let templateKey = matchTemplate(productName);
 
             // Enhanced Matching: Check DB for strict ID match
@@ -72,7 +74,7 @@ export async function POST(
                     product_name_raw: productName,
                     template_key: templateKey,
                     source_text: sourceText,
-                    quantity: item.quantity,
+                    quantity: actualQty,
                     status: templateKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
                 },
                 create: {
@@ -82,7 +84,7 @@ export async function POST(
                     product_name_raw: productName,
                     template_key: templateKey,
                     source_text: sourceText,
-                    quantity: item.quantity,
+                    quantity: actualQty,
                     status: 'AI_READY'
                 }
             });

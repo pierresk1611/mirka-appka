@@ -17,6 +17,7 @@ interface OrderItem {
     template?: {
         image_url?: string;
         pricing_json?: string;
+        main_file?: string | null;
     };
 }
 
@@ -259,19 +260,20 @@ export default function OrderDetailView() {
     const systemKeys = Object.keys(activeFormData);
 
 
-    // Helper to calculate price
     const calculatePrice = (qty: number, pricingJson: string | null) => {
         if (!pricingJson) return null;
         try {
             const pricing: Record<string, number> = JSON.parse(pricingJson);
             let unitPrice = 0;
 
-            // Find matching tier
-            // Keys are like "1-10", "11-30", "30+"? No, the parser makes ranges.
-            // My parser does:  "1-10": 2.4
+            // Sort ranges to handle overlaps or specific ordering
+            const entries = Object.entries(pricing).sort((a, b) => {
+                const aMin = parseInt(a[0].split('-')[0].replace(/\D/g, '')) || 0;
+                const bMin = parseInt(b[0].split('-')[0].replace(/\D/g, '')) || 0;
+                return bMin - aMin; // Highest first to catch max tiers
+            });
 
-            for (const [range, price] of Object.entries(pricing)) {
-                // Parse range "1-10" or "50+"
+            for (const [range, price] of entries) {
                 const parts = range.split('-');
                 if (parts.length === 2) {
                     const min = parseInt(parts[0].replace(/\D/g, ''));
@@ -280,24 +282,19 @@ export default function OrderDetailView() {
                         unitPrice = price;
                         break;
                     }
-                } else {
-                    // Handle "50+" or single numbers
+                } else if (range.includes('+')) {
                     const val = parseInt(range.replace(/\D/g, ''));
-                    // If it's just "50", maybe it means EXACTLY 50? 
-                    // Or maybe "50+" means >= 50.
-                    // The parser regex specifically looked for ranges or single numbers in <td>.
-                    // Let's assume standard ranges first. If "30+" logic is needed, we need to support it.
-                    // Simple fallback: if qty match exactly or is >= and it looks like a max tier.
-                    if (range.includes('+') && qty >= val) {
+                    if (qty >= val) {
                         unitPrice = price;
                         break;
                     }
+                } else {
+                    const val = parseInt(range.replace(/\D/g, ''));
+                    if (qty >= val) { // Treat single numbers as "at least this many"
+                        unitPrice = price;
+                    }
                 }
             }
-
-            // Fallback: Use the lowest available price if qty > max defined range? 
-            // Or highest price if qty < min?
-            // User requirement: "Identifikuje správnu cenovú hladinu".
 
             if (unitPrice > 0) {
                 return {
@@ -305,6 +302,13 @@ export default function OrderDetailView() {
                     total: unitPrice * qty
                 };
             }
+
+            // Final fallback: if no tier matched, use the lowest price if any tiers exist
+            const fallbackPrice = Object.values(pricing).sort((a, b) => a - b)[0];
+            if (fallbackPrice) {
+                return { unit: fallbackPrice, total: fallbackPrice * qty };
+            }
+
             return null;
 
         } catch (e) {
@@ -499,9 +503,9 @@ export default function OrderDetailView() {
 
                 {/* 3. Preview */}
                 <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative group">
-                    <div className="absolute top-4 left-4 z-10">
-                        <span className="bg-slate-900/80 text-white text-[9px] font-black uppercase px-2 py-1 rounded backdrop-blur border border-slate-700 tracking-widest">
-                            {activeItem?.preview_url ? 'Náhľad Výstupu (AI)' : 'Náhľad Šablóny (CSV)'}
+                    <div className="absolute top-4 left-4 z-10 flex gap-2">
+                        <span className={`text-white text-[9px] font-black uppercase px-2 py-1 rounded backdrop-blur border tracking-widest ${activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'bg-green-600/80 border-green-500' : 'bg-orange-600/80 border-orange-500'}`}>
+                            {activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'Live Náhľad (Agent)' : 'Katalógový náhľad'}
                         </span>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
@@ -509,7 +513,7 @@ export default function OrderDetailView() {
                             <img
                                 src={activeItem.preview_url || activeItem?.template?.image_url}
                                 alt="Preview"
-                                className="max-w-full max-h-full shadow-2xl rounded-sm border-2 border-white/20 transform group-hover:scale-105 transition duration-1000"
+                                className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 ${activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'border-white/20' : 'border-orange-500/20 grayscale-[0.5]'}`}
                             />
                         ) : (
                             <div className="text-center text-slate-600">
@@ -596,12 +600,17 @@ export default function OrderDetailView() {
                     </div>
                 </div>
                 <div className="p-4 h-40 overflow-y-auto font-mono text-[11px] leading-relaxed">
+                    {activeItem && !activeItem.template?.main_file && (
+                        <div className="mb-2 text-red-500 font-bold animate-pulse">
+                            <span className="opacity-30 mr-2">{'>'}</span> ERROR: Chýba prepojenie na Master PSD súbor!
+                        </div>
+                    )}
                     {logs.map((log, i) => (
                         <div key={i} className={`mb-1 ${log.includes('ERROR') ? 'text-red-400' : log.includes('SUCCESS') ? 'text-green-400' : 'text-slate-400'}`}>
                             <span className="opacity-30 mr-2">{'>'}</span> {log}
                         </div>
                     ))}
-                    {logs.length === 0 && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
+                    {logs.length === 0 && !(!activeItem?.template?.main_file) && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
                 </div>
             </div>
         </AppLayout>

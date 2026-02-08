@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
-import { matchTemplate, formatMetadataValue, extractTemplateId } from '@/lib/utils';
+import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityFromMetadata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -92,6 +92,7 @@ export async function POST() {
                                     }
                                 }
 
+                                const actualQty = extractQuantityFromMetadata(item.meta_data, item.quantity);
                                 const sourceText = `Produkt: ${productName}\n${itemMetaText.join('\n')}\nPoznámka: ${customer_note || ''}`;
 
                                 const savedItem = await prisma.orderItem.upsert({
@@ -99,7 +100,7 @@ export async function POST() {
                                     update: {
                                         template_key: matchedKey,
                                         source_text: sourceText,
-                                        quantity: item.quantity
+                                        quantity: actualQty
                                     },
                                     create: {
                                         id: `${savedOrder.id}-${item.id}`,
@@ -108,7 +109,7 @@ export async function POST() {
                                         product_name_raw: productName,
                                         template_key: matchedKey,
                                         source_text: sourceText,
-                                        quantity: item.quantity,
+                                        quantity: actualQty,
                                         status: matchedKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
                                     }
                                 });
