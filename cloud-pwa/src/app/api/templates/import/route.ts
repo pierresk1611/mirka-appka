@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { writeFile, mkdir } from 'fs/promises';
+import iconv from 'iconv-lite';
 
 // Helper to parse HTML pricing table
 // Expected format: <tr><td>1-10 ks</td><td>2,4 EUR</td></tr>
@@ -56,8 +57,12 @@ export async function POST(request: Request) {
         const tempFilePath = path.join(tempDir, `import_${Date.now()}.csv`);
 
         try {
-            await writeFile(tempFilePath, buffer);
-            console.log(`File written to ${tempFilePath}`);
+            // Decode Windows-1250 to UTF-8 string
+            const decodedContent = iconv.decode(buffer, 'win1250');
+
+            // Write as UTF-8
+            await writeFile(tempFilePath, decodedContent);
+            console.log(`File written to ${tempFilePath} (UTF-8 converted)`);
         } catch (writeError) {
             console.error('Failed to write temp file:', writeError);
             return NextResponse.json({ error: 'Failed to upload file to temp storage' }, { status: 500 });
