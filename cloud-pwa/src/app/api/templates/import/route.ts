@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseCSV } from '@/lib/csv-parser';
+import { extractTemplateId } from '@/lib/utils';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -99,42 +100,72 @@ export async function POST(request: Request) {
             // Intelligent Matching
             // Strategy: Check if normalized Title contains normalized Template Key, or vice versa
             const normTitle = normalizeString(title);
+            const strictId = extractTemplateId(title); // e.g. "2025_110"
 
             // Find finding the best match
             let bestMatch = null;
+            let isStrictMatch = false;
 
             for (const t of existingTemplates) {
                 const normKey = normalizeString(t.key);
+
+                // 0. Strict ID Match (Highest Priority & Verified Status)
+                if (strictId && (t.key.includes(strictId) || normKey.includes(normalizeString(strictId)))) {
+                    bestMatch = t;
+                    isStrictMatch = true;
+                    break;
+                }
+
                 const normName = t.name ? normalizeString(t.name) : '';
 
-                // 1. Exact match on Key (strongest)
+                // 1. Exact match on Key (strongest after ID)
                 if (normTitle === normKey) {
                     bestMatch = t;
+                    // Exact key match is also considered good enough for verification? 
+                    // User said: "zabezpeč, aby zelené podfarbenie dostali len tie šablóny, ktoré majú 100 % zhodu s kódom (ID)"
+                    // So stick to strictId for verification, but maybe allow exact matches too if no ID exists?
+                    // Let's rely on strictId for now as requested.
+                    if (!strictId) isStrictMatch = true; // Use exact match as strict if no ID found
                     break;
                 }
 
                 // 2. Exact match on Name
                 if (normName && normTitle === normName) {
                     bestMatch = t;
+                    if (!strictId) isStrictMatch = true;
                     break;
                 }
+            }
 
-                // 3. Containment (Key in Title or Title in Key)
-                // e.g. Title: "Boho Flowers" matches Key: "boho-flowers-v1" or "JSO_15_boho"
-                // Be careful with short keys
-                if (normKey.length > 5 && normTitle.includes(normKey)) bestMatch = t;
-                if (normTitle.length > 5 && normKey.includes(normTitle)) bestMatch = t;
+            // If no strict match found, try fuzzy text matching but DO NOT Verify
+            if (!bestMatch) {
+                for (const t of existingTemplates) {
+                    const normKey = normalizeString(t.key);
+                    // 3. Containment (Key in Title or Title in Key)
+                    // e.g. Title: "Boho Flowers" matches Key: "boho-flowers-v1" or "JSO_15_boho"
+                    // Be careful with short keys
+                    if (normKey.length > 5 && normTitle.includes(normKey)) bestMatch = t;
+                    if (normTitle.length > 5 && normKey.includes(normTitle)) bestMatch = t;
+                    if (bestMatch) break;
+                }
             }
 
             if (bestMatch) {
+                // Prepare update data
+                const updateData: any = {
+                    pricing_json: pricingJson,
+                    image_url: imageUrl,
+                    product_metadata_id: metadata.id
+                };
+
+                // Only set verified if strict match
+                if (isStrictMatch) {
+                    updateData.is_verified = true;
+                }
+
                 await prisma.templateConfig.update({
                     where: { key: bestMatch.key },
-                    data: {
-                        is_verified: true,
-                        pricing_json: pricingJson,
-                        image_url: imageUrl,
-                        product_metadata_id: metadata.id
-                    }
+                    data: updateData
                 });
                 matchCount++;
             }
