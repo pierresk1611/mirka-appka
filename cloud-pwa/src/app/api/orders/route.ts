@@ -28,8 +28,11 @@ export async function GET(request: Request) {
                         template_key: true,
                         status: true,
                         quantity: true,
+                        format: true,
+                        sku: true,
                         template: {
-                            include: {
+                            select: {
+                                pricing_json: true,
                                 product_metadata: {
                                     select: {
                                         pricing_json: true
