@@ -239,9 +239,11 @@ export default function TemplatesPage() {
                                         )}
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{template.key}</span>
-                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${template.status === 'READY' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                {template.status === 'READY' ? 'Pripravená' : 'Nová / Neuprataná'}
-                                            </span>
+                                            {!isVerified && (
+                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${template.status === 'READY' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                    {template.status === 'READY' ? 'Pripravená' : 'Nová / Neuprataná'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
