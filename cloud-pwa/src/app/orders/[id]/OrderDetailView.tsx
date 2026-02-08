@@ -18,6 +18,9 @@ interface OrderItem {
         image_url?: string;
         pricing_json?: string;
         main_file?: string | null;
+        product_metadata?: {
+            pricing_json?: string;
+        };
     };
 }
 
@@ -361,7 +364,8 @@ export default function OrderDetailView() {
                 <div className="flex gap-2 mt-8 overflow-x-auto pb-2">
                     {order.items.map(item => {
                         // Calculate price for this item
-                        const priceData = calculatePrice(item.quantity, (item as any).template?.pricing_json);
+                        const pricingJson = item.template?.pricing_json || item.template?.product_metadata?.pricing_json || null;
+                        const priceData = calculatePrice(item.quantity, pricingJson);
 
                         return (
                             <button
@@ -504,16 +508,31 @@ export default function OrderDetailView() {
                 {/* 3. Preview */}
                 <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative group">
                     <div className="absolute top-4 left-4 z-10 flex gap-2">
-                        <span className={`text-white text-[9px] font-black uppercase px-2 py-1 rounded backdrop-blur border tracking-widest ${activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'bg-green-600/80 border-green-500' : 'bg-orange-600/80 border-orange-500'}`}>
-                            {activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'Live Náhľad (Agent)' : 'Katalógový náhľad'}
-                        </span>
+                        {activeItem?.preview_url || activeItem?.status === 'GENERATED' ? (
+                            <span className="bg-green-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded border border-green-500 backdrop-blur shadow-lg tracking-widest">
+                                Live Náhľad (Agent)
+                            </span>
+                        ) : activeItem?.template?.main_file ? (
+                            <span className="bg-blue-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded border border-blue-500 backdrop-blur shadow-lg tracking-widest">
+                                PSD Prepojené
+                            </span>
+                        ) : (
+                            <span className="bg-orange-600/80 text-white text-[9px] font-black uppercase px-2 py-1 rounded border border-orange-500 backdrop-blur tracking-widest">
+                                Katalógový náhľad
+                            </span>
+                        )}
                     </div>
                     <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
                         {activeItem?.preview_url || activeItem?.template?.image_url ? (
                             <img
                                 src={activeItem.preview_url || activeItem?.template?.image_url}
                                 alt="Preview"
-                                className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 ${activeItem?.status === 'GENERATED' || activeItem?.preview_url ? 'border-white/20' : 'border-orange-500/20 grayscale-[0.5]'}`}
+                                className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 
+                                ${activeItem?.preview_url || activeItem?.status === 'GENERATED'
+                                        ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                                        : activeItem?.template?.main_file
+                                            ? 'border-blue-500/50 grayscale-[0.2]'
+                                            : 'border-orange-500/20 grayscale-[0.5]'}`}
                             />
                         ) : (
                             <div className="text-center text-slate-600">

@@ -11,12 +11,10 @@ function fixEncoding(str: string | null) {
         const decoded = iconv.decode(buffer, 'utf8');
 
         const hasReplacement = decoded.includes('');
-        const lenRatio = decoded.length / str.length;
-        console.log(`[DEBUG] "${str}" (${str.length}) -> "${decoded}" (${decoded.length}) | Ratio: ${lenRatio.toFixed(3)} | Has Repl: ${hasReplacement}`);
 
         if (!hasReplacement) return { result: decoded, reason: 'success' };
 
-        if (lenRatio < 0.95) return { result: decoded, reason: 'success_length_reduced' };
+        if (decoded.length < str.length) return { result: decoded, reason: 'success_length_reduced' };
 
         return { result: null, reason: 'failed_safety_check', decoded };
     } catch (e: any) {

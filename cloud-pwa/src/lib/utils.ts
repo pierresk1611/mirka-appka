@@ -18,48 +18,75 @@ export function extractTemplateId(text: string): string | null {
     return null;
 }
 
-/**
- * Extracts quantity from WooCommerce item metadata.
- * Looks for specific keys like 'Počet', 'Množstvo', 'Quantity' or '_tmcartepo_data'.
- */
 export function extractQuantityFromMetadata(metaData: any[], defaultQty: number = 1): number {
     if (!metaData || !Array.isArray(metaData)) return defaultQty;
 
+    const quantityKeys = [
+        'počet', 'pocet', 'množstvo', 'mnozstvo', 'qty', 'quantity',
+        'počet pozvánok', 'počet oznámení', 'počet kusov', 'ks'
+    ];
+
+    const extractFromStr = (str: string): number | null => {
+        if (!str) return null;
+
+        // Try direct number first
+        const directMatch = str.trim().match(/^\d+$/);
+        if (directMatch) return parseInt(directMatch[0]);
+
+        // Try "Label: Number" or "Label Number"
+        for (const key of quantityKeys) {
+            const regex = new RegExp(`${key}\\s*[:=]?\\s*(\\d+)`, 'i');
+            const match = str.match(regex);
+            if (match) return parseInt(match[1]);
+        }
+
+        return null;
+    };
+
     // 1. Look for obvious keys directly
-    const directKeys = ['počet', 'množstvo', 'quantity', 'pocet', 'mnozstvo', 'qty'];
     for (const meta of metaData) {
         const key = String(meta.key || '').toLowerCase();
-        if (directKeys.some(dk => key.includes(dk))) {
-            const val = parseInt(String(meta.value).replace(/\D/g, ''));
-            if (!isNaN(val) && val > 0) return val;
+        if (quantityKeys.some(dk => key.includes(dk))) {
+            const val = extractFromStr(String(meta.value));
+            if (val && val > 0) return val;
         }
     }
 
-    // 2. Look inside _tmcartepo_data or item_meta if it's a stringified JSON
+    // 2. Look inside complexity keys or flattened strings
     const complexKeys = ['_tmcartepo_data', 'item_meta', '_tm_epo'];
     for (const meta of metaData) {
         if (complexKeys.includes(meta.key)) {
-            try {
-                const parsed = typeof meta.value === 'string' ? JSON.parse(meta.value) : meta.value;
-                if (Array.isArray(parsed)) {
-                    for (const entry of parsed) {
-                        const name = String(entry.name || entry.key || '').toLowerCase();
-                        if (directKeys.some(dk => name.includes(dk))) {
-                            const val = parseInt(String(entry.value).replace(/\D/g, ''));
-                            if (!isNaN(val) && val > 0) return val;
+            const val = meta.value;
+
+            // If it's a string, it might be stringified JSON or a comma-separated list
+            if (typeof val === 'string') {
+                try {
+                    const parsed = JSON.parse(val);
+                    if (Array.isArray(parsed)) {
+                        for (const entry of parsed) {
+                            const name = String(entry.name || entry.key || '').toLowerCase();
+                            if (quantityKeys.some(dk => name.includes(dk))) {
+                                const v = extractFromStr(String(entry.value));
+                                if (v) return v;
+                            }
                         }
                     }
-                } else if (typeof parsed === 'object') {
-                    // Try to find any property that looks like quantity
-                    for (const [k, v] of Object.entries(parsed)) {
-                        if (directKeys.some(dk => k.toLowerCase().includes(dk))) {
-                            const val = parseInt(String(v).replace(/\D/g, ''));
-                            if (!isNaN(val) && val > 0) return val;
-                        }
+                } catch (e) {
+                    // Not JSON, maybe a list like "Text: XYZ, Počet pozvánok: 25"
+                    const parts = val.split(/,|;/);
+                    for (const part of parts) {
+                        const v = extractFromStr(part.trim());
+                        if (v) return v;
                     }
                 }
-            } catch (e) {
-                // Ignore parse errors
+            } else if (Array.isArray(val)) {
+                for (const entry of val) {
+                    const name = String(entry.name || entry.key || '').toLowerCase();
+                    if (quantityKeys.some(dk => name.includes(dk))) {
+                        const v = extractFromStr(String(entry.value));
+                        if (v) return v;
+                    }
+                }
             }
         }
     }

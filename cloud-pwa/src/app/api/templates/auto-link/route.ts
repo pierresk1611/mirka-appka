@@ -36,14 +36,21 @@ export async function POST() {
         const allAvailableFiles = Array.from(globalFileSet);
         console.log(`Auto-Link: Global File Universe built with ${allAvailableFiles.length} unique files.`);
 
-        // 2. Fetch all templates that need a main_file
+        // 2. Fetch all templates that need a main_file or are missing pricing
         const templatesToLink = await prisma.templateConfig.findMany({
             where: {
-                main_file: null
+                OR: [
+                    { main_file: null },
+                    { pricing_json: null }
+                ]
+            },
+            include: {
+                product_metadata: true
             }
         });
 
         let linkedCount = 0;
+        let pricingUpdatedCount = 0;
         const debugLogs: string[] = [];
         const sampleSize = 10;
         let loggedSampleCount = 0;
@@ -58,29 +65,50 @@ export async function POST() {
             let bestMatch: string | null = null;
             const extensions = ['.psd', '.ai', '.pdf'];
 
-            for (const ext of extensions) {
-                const match = allAvailableFiles.find(f => {
-                    const filename = path.basename(f);
-                    const normalizedFilename = normalize(filename);
-                    return normalizedFilename.includes(normalizedKey) && f.toLowerCase().endsWith(ext);
-                });
+            // 3.1 Try to find main_file if missing
+            if (!template.main_file) {
+                for (const ext of extensions) {
+                    const match = allAvailableFiles.find(f => {
+                        const filename = path.basename(f);
+                        const normalizedFilename = normalize(filename);
+                        return normalizedFilename.includes(normalizedKey) && f.toLowerCase().endsWith(ext);
+                    });
 
-                if (match) {
-                    bestMatch = match;
-                    break;
+                    if (match) {
+                        bestMatch = match;
+                        break;
+                    }
                 }
             }
 
+            // 3.2 Prepare update data
+            const updateData: any = {};
+            let needsUpdate = false;
+
             if (bestMatch) {
+                updateData.main_file = bestMatch;
+                updateData.status = 'READY';
+                needsUpdate = true;
+                linkedCount++;
+            }
+
+            // 3.3 Propagate pricing from metadata if missing
+            if (!template.pricing_json && template.product_metadata?.pricing_json) {
+                updateData.pricing_json = template.product_metadata.pricing_json;
+                // Also copy image if missing
+                if (!template.image_url && template.product_metadata.image_url) {
+                    updateData.image_url = template.product_metadata.image_url;
+                }
+                needsUpdate = true;
+                pricingUpdatedCount++;
+            }
+
+            if (needsUpdate) {
                 await prisma.templateConfig.update({
                     where: { key: template.key },
-                    data: {
-                        main_file: bestMatch,
-                        status: 'READY'
-                    }
+                    data: updateData
                 });
-                linkedCount++;
-            } else if (loggedSampleCount < sampleSize) {
+            } else if (loggedSampleCount < sampleSize && !template.main_file) {
                 debugLogs.push(`Template Key: "${rawKey}" (Normalized: "${normalizedKey}") -> Žiadna zhoda v universe (${allAvailableFiles.length} súborov)`);
                 loggedSampleCount++;
             }
@@ -88,8 +116,9 @@ export async function POST() {
 
         return NextResponse.json({
             success: true,
-            message: `Automatické párovanie dokončené (Global Match). Spárovaných: ${linkedCount} šablón.`,
+            message: `Automatické párovanie dokončené. Spárovaných: ${linkedCount}, Ceny doplnené: ${pricingUpdatedCount}.`,
             linkedCount,
+            pricingUpdatedCount,
             totalFilesScanned: allAvailableFiles.length,
             debugLogs: linkedCount === 0 ? debugLogs : []
         });

@@ -12,7 +12,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 store: true,
                 items: {
                     orderBy: { woo_item_id: 'asc' },
-                    include: { template: true }
+                    include: {
+                        template: {
+                            include: {
+                                product_metadata: true
+                            }
+                        }
+                    }
                 }
             }
         });
