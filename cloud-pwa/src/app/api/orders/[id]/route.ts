@@ -11,7 +11,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             include: {
                 store: true,
                 items: {
-                    orderBy: { woo_item_id: 'asc' }
+                    orderBy: { woo_item_id: 'asc' },
+                    include: { template: true }
                 }
             }
         });

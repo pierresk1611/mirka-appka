@@ -20,6 +20,7 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "openai": "^6.17.0",
+    "papaparse": "^5.5.3",
     "prisma": "^5.22.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -28,6 +29,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/iconv-lite": "^0.0.1",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",

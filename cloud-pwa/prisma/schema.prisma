@@ -33,33 +33,55 @@ model Order {
   @@unique([woo_id, store_id])
 }
 
+
 model OrderItem {
-  id               String  @id @default(uuid())
+  id               String          @id @default(uuid())
   order_id         String
-  order            Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order            Order           @relation(fields: [order_id], references: [id], onDelete: Cascade)
   woo_item_id      Int
   product_name_raw String
   template_key     String?
+  template         TemplateConfig? @relation(fields: [template_key], references: [key])
   source_text      String? // Context for AI
   ai_data          String? // JSON results
   preview_url      String?
   agent_log        String?
   material         String?
-  quantity         Int     @default(1)
-  status           String  @default("PENDING")
+  quantity         Int             @default(1)
+  status           String          @default("PENDING")
 }
 
 model TemplateConfig {
-  key         String   @id // Original folder name
-  name        String?  // Alias (e.g. JSO_15)
-  manifest    String?  // JSON configuration
-  mappings    String?  // JSON: { "Layer Name": "SYSTEM_KEY" }
-  folder_path String?  // Recursive path in Dropbox
-  main_file   String?  // Path to selected PSD/AI
-  files       String?  // JSON array of available PSD/AI files
-  status      String   @default("NEW") // NEW, READY
-  created_at  DateTime @default(now())
+  key                 String           @id // Original folder name
+  name                String? // Alias (e.g. JSO_15)
+  manifest            String? // JSON configuration
+  mappings            String? // JSON: { "Layer Name": "SYSTEM_KEY" }
+  folder_path         String? // Recursive path in Dropbox
+  main_file           String? // Path to selected PSD/AI
+  files               String? // JSON array of available PSD/AI files
+  status              String           @default("NEW") // NEW, READY
+  is_in_eshop         Boolean          @default(false) // Tracked from CSV import
+  is_verified         Boolean          @default(false)
+  pricing_json        String? // JSON: { "1-10": 2.4, ... }
+  image_url           String?
+  product_metadata_id String?
+  product_metadata    ProductMetadata? @relation(fields: [product_metadata_id], references: [id])
+  last_synced_at      DateTime? // Last CSV import timestamp
+  created_at          DateTime         @default(now())
+  order_items         OrderItem[]
 }
+
+model ProductMetadata {
+  id           String           @id @default(uuid())
+  csv_title    String
+  pricing_json String? // Parsed pricing tiers
+  image_url    String?
+  html_content String? // Original HTML from CSV
+  source_csv   String? // Filename of imported CSV
+  templates    TemplateConfig[]
+  created_at   DateTime         @default(now())
+}
+
 
 model Settings {
   key   String @id

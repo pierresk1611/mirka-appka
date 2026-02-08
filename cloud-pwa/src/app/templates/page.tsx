@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AppLayout from '../../components/AppLayout';
 import {
     Search,
@@ -9,11 +9,12 @@ import {
     FileType,
     Link,
     CheckCircle2,
-    AlertCircle,
     Loader2,
     Folder,
-    ExternalLink,
-    Save
+    Save,
+    Upload,
+    FileSpreadsheet,
+    Image as ImageIcon
 } from 'lucide-react';
 
 interface Template {
@@ -23,21 +24,32 @@ interface Template {
     main_file: string | null;
     files: string | null; // JSON
     status: string;
+    is_verified: boolean;
+    image_url: string | null;
 }
 
 export default function TemplatesPage() {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
+    const [importing, setImporting] = useState(false);
     const [search, setSearch] = useState('');
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [editData, setEditData] = useState({ name: '', main_file: '' });
+
+    // Hidden file input ref
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchTemplates = async () => {
         try {
             const res = await fetch('/api/templates');
             if (res.ok) {
                 const data = await res.json();
+                // Sort: Verified first, then by name/key
+                data.sort((a: Template, b: Template) => {
+                    if (a.is_verified === b.is_verified) return 0;
+                    return a.is_verified ? -1 : 1;
+                });
                 setTemplates(data);
             }
         } catch (error) {
@@ -63,6 +75,39 @@ export default function TemplatesPage() {
             alert('Chyba pri synchronizácii');
         } finally {
             setSyncing(false);
+        }
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImporting(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/templates/import', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(`Import úspešný!\nSpracované: ${data.processed}\nVytvorené cenníky: ${data.created}\nSpárované šablóny: ${data.matched}`);
+                fetchTemplates(); // Refresh list
+            } else {
+                alert('Chyba pri importe: ' + data.error);
+            }
+        } catch (error) {
+            alert('Chyba pripojenia');
+        } finally {
+            setImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
         }
     };
 
@@ -117,6 +162,25 @@ export default function TemplatesPage() {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
+
+                    {/* Hidden File Input */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept=".csv"
+                        className="hidden"
+                    />
+
+                    <button
+                        onClick={handleImportClick}
+                        disabled={importing}
+                        className="bg-green-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition shadow-lg disabled:opacity-50"
+                    >
+                        {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                        Import CSV
+                    </button>
+
                     <button
                         onClick={handleSync}
                         disabled={syncing}
@@ -132,14 +196,33 @@ export default function TemplatesPage() {
                 {filtered.map(template => {
                     const isEditing = editingKey === template.key;
                     const files: string[] = JSON.parse(template.files || '[]');
+                    const isVerified = template.is_verified;
 
                     return (
-                        <div key={template.key} className={`bg-white border-2 rounded-2xl p-6 transition-all duration-300 ${isEditing ? 'border-blue-500 shadow-2xl ring-4 ring-blue-500/5' : 'border-white hover:border-slate-100 shadow-sm hover:shadow-md'}`}>
+                        <div key={template.key} className={`relative bg-white border-2 rounded-2xl p-6 transition-all duration-300 group
+                            ${isEditing ? 'border-blue-500 shadow-2xl ring-4 ring-blue-500/5' :
+                                isVerified ? 'border-green-500/20 bg-green-50/30 hover:border-green-500/40' :
+                                    'border-white hover:border-slate-100 shadow-sm hover:shadow-md'}
+                        `}>
+                            {isVerified && (
+                                <div className="absolute top-0 right-0 bg-green-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-bl-xl rounded-tr-lg shadow-sm">
+                                    Overená Šablóna
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 ${template.status === 'READY' ? 'bg-green-50 text-green-500' : 'bg-orange-50 text-orange-400'}`}>
-                                        <Folder className="w-6 h-6" />
-                                    </div>
+                                    {/* Thumbnail or Icon */}
+                                    {template.image_url ? (
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-white">
+                                            <img src={template.image_url} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className={`w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 ${template.status === 'READY' ? 'bg-green-50 text-green-500' : 'bg-orange-50 text-orange-400'}`}>
+                                            <Folder className="w-6 h-6" />
+                                        </div>
+                                    )}
+
                                     <div>
                                         {isEditing ? (
                                             <input
@@ -149,7 +232,10 @@ export default function TemplatesPage() {
                                                 className="text-lg font-bold text-blue-600 border-b-2 border-blue-500 outline-none w-full bg-blue-50/50 px-2 py-1 rounded"
                                             />
                                         ) : (
-                                            <h3 className="text-lg font-bold text-slate-900">{template.name || template.key}</h3>
+                                            <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition flex items-center gap-2">
+                                                {template.name || template.key}
+                                                {isVerified && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                                            </h3>
                                         )}
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{template.key}</span>
@@ -232,7 +318,7 @@ export default function TemplatesPage() {
                         <Folder className="w-10 h-10" />
                     </div>
                     <h3 className="text-slate-900 font-bold mb-1">Žiadne šablóny</h3>
-                    <p className="text-slate-500 text-sm">Skúste spustiť skenovanie Dropboxu.</p>
+                    <p className="text-slate-500 text-sm">Skúste spustiť skenovanie Dropboxu alebo import CSV.</p>
                 </div>
             )}
         </AppLayout>

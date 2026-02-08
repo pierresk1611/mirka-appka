@@ -253,6 +253,60 @@ export default function OrderDetailView() {
     // System keys from AI results to map
     const systemKeys = Object.keys(activeFormData);
 
+
+    // Helper to calculate price
+    const calculatePrice = (qty: number, pricingJson: string | null) => {
+        if (!pricingJson) return null;
+        try {
+            const pricing: Record<string, number> = JSON.parse(pricingJson);
+            let unitPrice = 0;
+
+            // Find matching tier
+            // Keys are like "1-10", "11-30", "30+"? No, the parser makes ranges.
+            // My parser does:  "1-10": 2.4
+
+            for (const [range, price] of Object.entries(pricing)) {
+                // Parse range "1-10" or "50+"
+                const parts = range.split('-');
+                if (parts.length === 2) {
+                    const min = parseInt(parts[0].replace(/\D/g, ''));
+                    const max = parseInt(parts[1].replace(/\D/g, ''));
+                    if (qty >= min && qty <= max) {
+                        unitPrice = price;
+                        break;
+                    }
+                } else {
+                    // Handle "50+" or single numbers
+                    const val = parseInt(range.replace(/\D/g, ''));
+                    // If it's just "50", maybe it means EXACTLY 50? 
+                    // Or maybe "50+" means >= 50.
+                    // The parser regex specifically looked for ranges or single numbers in <td>.
+                    // Let's assume standard ranges first. If "30+" logic is needed, we need to support it.
+                    // Simple fallback: if qty match exactly or is >= and it looks like a max tier.
+                    if (range.includes('+') && qty >= val) {
+                        unitPrice = price;
+                        break;
+                    }
+                }
+            }
+
+            // Fallback: Use the lowest available price if qty > max defined range? 
+            // Or highest price if qty < min?
+            // User requirement: "Identifikuje správnu cenovú hladinu".
+
+            if (unitPrice > 0) {
+                return {
+                    unit: unitPrice,
+                    total: unitPrice * qty
+                };
+            }
+            return null;
+
+        } catch (e) {
+            return null;
+        }
+    };
+
     return (
         <AppLayout>
             {/* Header Area */}
@@ -295,22 +349,38 @@ export default function OrderDetailView() {
                 </div>
 
                 {/* Sub-Tabs for Items */}
-                <div className="flex gap-2 mt-8">
-                    {order.items.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveItemId(item.id)}
-                            className={`px-4 py-2 rounded-t-lg text-xs font-bold uppercase tracking-wider border-x border-t transition-all
+                <div className="flex gap-2 mt-8 overflow-x-auto pb-2">
+                    {order.items.map(item => {
+                        // Calculate price for this item
+                        const priceData = calculatePrice(item.quantity, (item as any).template?.pricing_json);
+
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveItemId(item.id)}
+                                className={`flex flex-col items-start px-4 py-2 rounded-t-lg bg-white border-x border-t transition-all min-w-[150px]
                                 ${activeItemId === item.id
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-[0_-4px_10px_rgba(37,99,235,0.2)]'
-                                    : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-white'}
+                                        ? 'border-blue-600 shadow-[0_-4px_10px_rgba(37,99,235,0.2)] relative z-10'
+                                        : 'border-gray-200 hover:bg-gray-50 text-gray-400'}
                             `}
-                        >
-                            {item.product_name_raw}
-                        </button>
-                    ))}
+                            >
+                                <span className={`text-xs font-bold uppercase tracking-wider ${activeItemId === item.id ? 'text-blue-600' : 'text-gray-500'}`}>
+                                    {item.product_name_raw}
+                                </span>
+                                <div className="flex items-center justify-between w-full mt-1">
+                                    <span className="text-[10px] font-mono text-slate-400">{item.quantity} ks</span>
+                                    {priceData && (
+                                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                                            {priceData.total.toFixed(2)} €
+                                        </span>
+                                    )}
+                                </div>
+                            </button>
+                        )
+                    })}
                 </div>
             </div>
+
 
             {/* Main Content: Tabs/Editor/Preview */}
             <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-420px)]">
