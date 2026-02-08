@@ -207,36 +207,34 @@ export default function TemplatesPage() {
                             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
                             {importing ? `Importujem ${progress}%` : 'Import CSV'}
                         </div>
-                    </button>
 
-                    </button>
 
-                    <button
-                        onClick={async () => {
-                            if (!confirm('Naozaj chcete spustiť opravu kódovania pre všetky importované produkty?')) return;
-                            try {
-                                const res = await fetch('/api/admin/fix-encoding?dryRun=false', { method: 'POST' });
-                                const data = await res.json();
-                                alert(`Oprava dokončená.\nOpravených záznamov: ${data.fixedCount}`);
-                                window.location.reload();
-                            } catch (e) {
-                                alert('Chyba pri oprave kódovania');
-                            }
-                        }}
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2"
-                    >
-                        <Wrench className="w-4 h-4" />
-                        <span>Opraviť</span>
-                    </button>
+                        <button
+                            onClick={async () => {
+                                if (!confirm('Naozaj chcete spustiť opravu kódovania pre všetky importované produkty?')) return;
+                                try {
+                                    const res = await fetch('/api/admin/fix-encoding?dryRun=false', { method: 'POST' });
+                                    const data = await res.json();
+                                    alert(`Oprava dokončená.\nOpravených záznamov: ${data.fixedCount}`);
+                                    window.location.reload();
+                                } catch (e) {
+                                    alert('Chyba pri oprave kódovania');
+                                }
+                            }}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2"
+                        >
+                            <Wrench className="w-4 h-4" />
+                            <span>Opraviť</span>
+                        </button>
 
-                    <button
-                        onClick={handleSync}
-                        disabled={syncing}
-                        className="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition shadow-lg disabled:opacity-50"
-                    >
-                        {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        Skenovať Dropbox
-                    </button>
+                        <button
+                            onClick={handleSync}
+                            disabled={syncing}
+                            className="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition shadow-lg disabled:opacity-50"
+                        >
+                            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                            Skenovať Dropbox
+                        </button>
                 </div>
             </div>
 
@@ -363,16 +361,16 @@ export default function TemplatesPage() {
             </div>
 
             {
-        filtered.length === 0 && !loading && (
-            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200 mt-8">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                    <Folder className="w-10 h-10" />
-                </div>
-                <h3 className="text-slate-900 font-bold mb-1">Žiadne šablóny</h3>
-                <p className="text-slate-500 text-sm">Skúste spustiť skenovanie Dropboxu alebo import CSV.</p>
-            </div>
-        )
-    }
+                filtered.length === 0 && !loading && (
+                    <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200 mt-8">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                            <Folder className="w-10 h-10" />
+                        </div>
+                        <h3 className="text-slate-900 font-bold mb-1">Žiadne šablóny</h3>
+                        <p className="text-slate-500 text-sm">Skúste spustiť skenovanie Dropboxu alebo import CSV.</p>
+                    </div>
+                )
+            }
         </AppLayout >
     );
 }
