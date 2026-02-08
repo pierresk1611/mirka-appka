@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { parseCSV } from '@/lib/csv-parser';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { writeFile, mkdir } from 'fs/promises';
 
 // Helper to parse HTML pricing table
@@ -48,11 +49,18 @@ export async function POST(request: Request) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const tempDir = path.join(process.cwd(), 'tmp');
-        await mkdir(tempDir, { recursive: true });
+
+        // Use os.tmpdir() for Vercel/Lambda compatibility
+        const tempDir = os.tmpdir();
         const tempFilePath = path.join(tempDir, `import_${Date.now()}.csv`);
 
-        await writeFile(tempFilePath, buffer);
+        try {
+            await writeFile(tempFilePath, buffer);
+            console.log(`File written to ${tempFilePath}`);
+        } catch (writeError) {
+            console.error('Failed to write temp file:', writeError);
+            return NextResponse.json({ error: 'Failed to upload file to temp storage' }, { status: 500 });
+        }
 
         // Parse CSV
         const rows = await parseCSV(tempFilePath, { separator: ',' }); // Assuming comma, can be semicolon
