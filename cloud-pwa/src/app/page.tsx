@@ -16,7 +16,9 @@ interface OrderItem {
     id: string;
     pricing_json?: string;
     csv_title?: string;
+    csv_title?: string;
     sku?: string;
+    image_url?: string;
   };
 }
 

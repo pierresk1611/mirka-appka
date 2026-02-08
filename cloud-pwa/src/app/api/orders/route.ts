@@ -30,12 +30,22 @@ export async function GET(request: Request) {
                         quantity: true,
                         format: true,
                         sku: true,
+                        product_metadata: {
+                            select: {
+                                id: true,
+                                pricing_json: true,
+                                image_url: true,
+                                csv_title: true,
+                                sku: true
+                            }
+                        },
                         template: {
                             select: {
                                 pricing_json: true,
                                 product_metadata: {
                                     select: {
-                                        pricing_json: true
+                                        pricing_json: true,
+                                        image_url: true
                                     }
                                 }
                             }
