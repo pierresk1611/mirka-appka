@@ -53,10 +53,9 @@ export async function POST(request: Request) {
             }
         }
 
-        // 2. Fix Ghost Templates (name)
-        const templates = await prisma.templateConfig.findMany({
-            where: { is_in_eshop: true }
-        });
+        // 2. Fix Templates (name)
+        // Scan all templates to be safe, as old imports might not have is_in_eshop set
+        const templates = await prisma.templateConfig.findMany();
 
         for (const t of templates) {
             const fixedName = fixEncoding(t.name);

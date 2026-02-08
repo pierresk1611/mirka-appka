@@ -217,10 +217,15 @@ export default function TemplatesPage() {
                             try {
                                 const res = await fetch('/api/admin/fix-encoding?dryRun=false', { method: 'POST' });
                                 const data = await res.json();
-                                alert(`Oprava dokončená.\nOpravených záznamov: ${data.fixedCount}`);
-                                window.location.reload();
-                            } catch (e) {
-                                alert('Chyba pri oprave kódovania');
+
+                                if (data.error) {
+                                    alert(`Chyba: ${data.error}`);
+                                } else {
+                                    alert(`Oprava dokončená.\nOpravených záznamov: ${data.fixedCount ?? 0}`);
+                                    window.location.reload();
+                                }
+                            } catch (e: any) {
+                                alert('Chyba pri oprave kódovania: ' + e.message);
                             }
                         }}
                         className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2"
