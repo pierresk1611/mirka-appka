@@ -23,18 +23,7 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                 position: 'relative',
             }}
         >
-            {/* Decorative beer mug icon */}
-            <div
-                style={{
-                    position: 'absolute',
-                    top: '40px',
-                    right: '40px',
-                    fontSize: '120px',
-                    opacity: 0.15,
-                }}
-            >
-                🍺
-            </div>
+            {/* Decorative element removed for debugging */}
 
             {/* Main heading */}
             <div
@@ -44,8 +33,6 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                     color: '#f4a460',
                     marginBottom: '40px',
                     textAlign: 'center',
-                    textTransform: 'uppercase',
-                    letterSpacing: '4px',
                 }}
             >
                 Pozvánka na oslavu
@@ -58,7 +45,6 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                     lineHeight: '1.8',
                     marginBottom: '60px',
                     textAlign: 'center',
-                    whiteSpace: 'pre-wrap',
                     maxWidth: '900px',
                     margin: '0 auto 60px',
                 }}
@@ -73,7 +59,6 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '20px',
-                    marginTop: 'auto',
                 }}
             >
                 <div
@@ -83,7 +68,7 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                         color: '#f4a460',
                     }}
                 >
-                    📅 {date}
+                    {date}
                 </div>
                 <div
                     style={{
@@ -91,7 +76,7 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                         color: '#d4c4b0',
                     }}
                 >
-                    📍 {place}
+                    {place}
                 </div>
             </div>
 
@@ -103,7 +88,6 @@ export default function BIR_PIVO({ name_main, date, place, body_full }: BIR_PIVO
                     textAlign: 'center',
                     marginTop: '60px',
                     color: '#f4a460',
-                    fontStyle: 'italic',
                 }}
             >
                 {name_main}
