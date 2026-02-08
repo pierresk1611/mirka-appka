@@ -95,6 +95,23 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const itemId = searchParams.get('itemId');
 
+        if (itemId === 'test') {
+            return new ImageResponse(
+                <div style={{
+                    fontSize: 40,
+                    background: 'white',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    Hello from Vercel OG!
+                </div>,
+                { width: 400, height: 200 }
+            );
+        }
+
         if (!itemId) {
             return new Response('Missing itemId', { status: 400 });
         }
