@@ -10,10 +10,23 @@ function fixEncoding(str: string | null): string | null {
     try {
         const buffer = iconv.encode(str, 'win1250');
         const decoded = iconv.decode(buffer, 'utf8');
-        // Safety check: If the decoded string contains replacement characters (),
-        // it means the "fix" destroyed valid characters.
-        if (decoded.includes('')) return null;
-        return decoded;
+
+        // Safety check strategy:
+        // 1. If no replacement chars (), it's a clean fix -> ACCEPT
+        // 2. If length reduced significantly (e.g. by > 5%), it implies double-encoded 
+        //    sequences (2 bytes) were merged into single chars (1 byte) -> ACCEPT
+        //    (Double encoded 'á' is 2 chars "Ăˇ", fixed 'á' is 1 char)
+
+        const hasReplacement = decoded.includes('');
+        const lenRatio = decoded.length / str.length;
+
+        if (!hasReplacement) return decoded;
+
+        // If it has replacement chars but became significantly shorter, 
+        // it's likely a successful fix of utf8-as-win1250 interpretation
+        if (lenRatio < 0.95) return decoded;
+
+        return null; // Otherwise, suspect data loss -> REJECT
     } catch (e) {
         return str;
     }
