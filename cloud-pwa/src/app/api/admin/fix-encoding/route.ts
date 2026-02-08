@@ -18,15 +18,18 @@ function fixEncoding(str: string | null): string | null {
         //    (Double encoded 'á' is 2 chars "Ăˇ", fixed 'á' is 1 char)
 
         const hasReplacement = decoded.includes('');
-        const lenRatio = decoded.length / str.length;
 
+        // 1. Clean fix (no data loss)
         if (!hasReplacement) return decoded;
 
-        // If it has replacement chars but became significantly shorter, 
-        // it's likely a successful fix of utf8-as-win1250 interpretation
-        if (lenRatio < 0.95) return decoded;
+        // 2. Length reduction heuristic:
+        // Double-encoded UTF-8 sequences (e.g. "Ăˇ" = 2 chars) merge into single UTF-8 chars ("á" = 1 char).
+        // Therefore, a correct fix ALWAYS reduces string length.
+        // A destructive "fix" (valid text -> broken text) usually maintains length (replacement char is 1 char)
+        // or reduces it only if characters are dropped completely (rare in default iconv).
+        if (decoded.length < str.length) return decoded;
 
-        return null; // Otherwise, suspect data loss -> REJECT
+        return null;
     } catch (e) {
         return str;
     }

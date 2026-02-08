@@ -1,0 +1,212 @@
+prisma:warn In production, we recommend using `prisma generate --no-engine` (See: `prisma generate --help`)
+Searching for 'Pozv'...
+(node:3527) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/apple/MIRKA%20AI%20AGENT%20DATA/cloud-pwa/debug_safety_db.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/apple/MIRKA AI AGENT DATA/cloud-pwa/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[TEMPLATE] Found Key: "2025_2"
+[TEMPLATE] Found Name: "PozvĂˇnka na oslavu 40. narodenĂ­n 2025_2"
+[DEBUG] "PozvĂˇnka na oslavu 40. narodenĂ­n 2025_2" (41) -> "Pozvánka na oslavu 40. narodenín 2025_2" (39) | Ratio: 0.951 | Has Repl: true
+[TEMPLATE] No fix needed or safety check failed.
+[METADATA] Found Title: "PozvĂˇnka na oslavu boho flowers"
+[DEBUG] "PozvĂˇnka na oslavu boho flowers" (32) -> "Pozvánka na oslavu boho flowers" (31) | Ratio: 0.969 | Has Repl: true
+[DEBUG] "[vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" top_padding="100" bottom_padding="100" text_color="dark" text_align="left" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none" shape_type=""][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][divider line_type="No Line" custom_height="50"][vc_column_text el_class="perex"]
+<p style="text-align: center;">NĂˇpaditĂˇ pozvĂˇnka formĂˇt A6. JednostrannĂˇ potlaÄŤ, pozvĂˇnka je neotvĂˇrateÄľnĂ©.
+ModernĂ©, ĹˇtĂ˝lovĂ©, kreatĂ­vne pozvĂˇnky na oslavu, vĂˇĹˇ event alebo podujatie.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="50"][tabbed_section style="minimal" tab_change_animation="fade" alignment="left" spacing="side-25px" tab_color="extra-color-gradient-1" vs_content_animation="fade" vs_link_animation="opacity" vs_navigation_alignment="left" vs_navigation_width_2="25%" vs_navigation_func="default" vs_navigation_width="regular" vs_navigation_spacing="15px" vs_navigation_mobile_display="visible" vs_tab_spacing="5%" cta_button_style="accent-color" icon_size="24"][tab icon_family="none" title="Dodanie" id="1726589942007-8" tab_id="1726589942007-3"][vc_column_text]PozvĂˇnky tlaÄŤĂ­me nasledujĂşci deĹ� po potvrdenĂ­ objednĂˇvky. PozvĂˇnky je moĹľnĂ© vyzdvihnĂşĹĄ si osobne alebo vĂˇm budĂş doruÄŤenĂ© poĹˇtou. Pre urĂ˝chlenie procesu prosĂ­m zadajte vĹˇetky Ăşdaje do formulĂˇra korektne a bez chĂ˝b, aby sa prediĹˇlo nĂˇslednĂ˝m opravĂˇm. KaĹľdĂ˝ nĂˇvrh posielame pred tlaÄŤou na schvĂˇlenie.
+
+MinimĂˇlny odber 30 ks pri zobrazenej cene. <strong>V prĂ­pade poĹľiadavky na zmenu farieb, pĂ­sma a pod. napĂ­Ĺˇte nĂˇm prosĂ­m do PoznĂˇmok.</strong>[/vc_column_text][/tab][tab icon_family="none" title="CennĂ­k" id="1726589942045-0" tab_id="1726589942046-2"][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlaÄŤe pri niĹľĹˇĂ­ch objemoch DL</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">2,4 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">2 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">1,3 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlaÄŤe pri niĹľĹˇĂ­ch objemoch Ĺˇtvorec</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">2,4 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">2 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">1,3 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlaÄŤe pri niĹľĹˇĂ­ch objemoch A6</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">1,7 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,05 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">0,89 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][/tab][tab icon_family="none" title="FormĂˇty" id="1726589942080-3" tab_id="1726589942081-2"][vc_column_text]<strong>DostupnĂ© formĂˇty pre tento typ pozvĂˇnky</strong>
+
+<strong>FormĂˇt A6</strong>Â - 14,8 x 10,8 cm (alebo 10,8 x 14,8 cm)
+<strong>FormĂˇt Ĺ tvorec</strong>Â - 14,8 x 14,8 cm
+<strong>FormĂˇt DL</strong>Â - 20 x 10 cm
+
+*FormĂˇty prepracujeme za grafickĂ˝ poplatok 5 EUR.[/vc_column_text][/tab][/tabbed_section][divider line_type="No Line" custom_height="60"][vc_column_text]
+<h3 style="text-align: center;">Typ papiera</h3>
+[/vc_column_text][divider line_type="Small Line" line_alignment="center" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20" custom_line_width="80"][vc_column_text]
+<p style="text-align: center;">PodÄľa typu pozvĂˇnky je pouĹľĂ­vanĂ˝ buÄŹ matnĂ˝ alebo lesklĂ˝ papier gramĂˇĹľe 300 g/m2. PozvĂˇnky je moĹľnĂ© tlaÄŤiĹĄ aj na kreatĂ­vne papiere. Pre vĂ˝ber kreatĂ­vneho papiera nĂˇs prosĂ­m kontaktujte. PrĂ­platok za kreatĂ­vny papier je 40 centov na kus.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="30"][vc_column_text]
+<p style="text-align: center;"><strong>UKĂ�Ĺ˝KA KREATĂŤVNYCH PAPIEROV</strong></p>
+[/vc_column_text][vc_gallery type="image_grid" images="69,70,71,72,73,80,74,75,76,77,78,79" image_grid_loading="default" layout="constrained_fullwidth" item_spacing="5px" gallery_style="5" load_in_animation="none" img_size="300x200"][divider line_type="No Line" custom_height="60"][vc_column_text]
+<h3 style="text-align: center;">Kvalita spracovania</h3>
+[/vc_column_text][divider line_type="Small Line" line_alignment="center" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20" custom_line_width="80"][vc_column_text]
+<p style="text-align: center;">PozvĂˇnky tlaÄŤĂ­me na profesionĂˇlnych kopĂ­rovacĂ­ch strojoch znaÄŤky Xerox. NĂˇslednĂ˝ orez a finĂˇlne spracovanie prebieha v rĂşkach skĂşsenĂ˝ch odbornĂ­kov. TechnolĂłgia tlaÄŤe je flat, ÄŤo znamenĂˇ, Ĺľe farebnĂ© pokrytie papiera je hladkĂ©. VhodnĂ˝m grafickĂ˝m prevedenĂ­m vĹˇak aj pri tejto technolĂłgii vieme docieliĹĄ jemnĂ© vystĂşpenie tlaÄŤe, tzv. light 3D effect.</p>
+<p style="text-align: center;">PozvĂˇnky sĂş podÄľa typu tlaÄŤenĂ© na papieri im urÄŤenom pre dosiahnutie najvyĹˇĹˇĂ­ch kvalĂ­t. Na prianie zĂˇkaznĂ­ka je moĹľnĂ© papier zmeniĹĄ. Zmenu papiera odporĂşÄŤame pre dosiahnutie najlepĹˇieho vĂ˝sledku konzultovaĹĄ vopred.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="60"][divider line_type="Full Width Line" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20"][divider line_type="No Line" custom_height="60"][vc_row_inner column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" text_align="left" row_position="default" row_position_tablet="inherit" row_position_phone="inherit" overflow="visible" pointer_events="all"][vc_column_inner column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" overflow="visible" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][vc_column_text]
+<h2 style="text-align: center;">ObĂˇlky na pozvĂˇnky na oslavu</h2>
+<p style="text-align: center;">V ponuke mĂˇme klasickĂ© biele obĂˇlky alebo prĂ©miovĂ© luxusnĂ© obĂˇlky za 0,65 Eur/kus.</p>
+[/vc_column_text][vc_gallery type="image_grid" images="1096,1097,1098,1099,1100,1101,1102,1103,1104,1105,1106,1107,1108" image_grid_loading="default" layout="constrained_fullwidth" item_spacing="5px" gallery_style="7" load_in_animation="none" img_size="300x200"][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row][vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" text_color="dark" text_align="left" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none"][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][vc_column_text]
+<h3 style="text-align: center;">PodobnĂ© pozvĂˇnky</h3>
+[/vc_column_text][nectar_portfolio layout="3" category="na-narodeniny" project_style="7" item_spacing="default" load_in_animation="none" projects_per_page="6" project_offset="1"][divider line_type="No Line" custom_height="60"][/vc_column][/vc_row][vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" text_color="dark" text_align="center" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none" gradient_type="default" shape_type=""][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][nectar_gradient_text heading_tag="h3" color="extra-color-gradient-2" gradient_direction="horizontal" text="NenaĹˇiel si ÄŤo si hÄľadal?" margin_bottom="10"][vc_custom_heading text="Ozvi sa nĂˇm a pozvĂˇnku mĂ´ĹľeĹˇ maĹĄ priamo na mieru." font_container="tag:h2|font_size:52|text_align:center|line_height:52px" use_theme_fonts="yes" css_animation="fadeInUp"][divider line_type="No Line" custom_height="10"][vc_custom_heading text="So spracovanĂ­m nĂˇvrhu ti radi pomĂ´Ĺľeme." font_container="tag:p|text_align:center|color:rgba(0%2C0%2C0%2C0.7)" use_theme_fonts="yes" css_animation="fadeInUp" css=".vc_custom_1543948894844{margin-top: 10px !important;margin-bottom: 10px !important;}"][nectar_btn size="large" button_style="regular" button_color_2="extra-color-gradient-2" icon_family="default_arrow" url="/pozvanka-na-mieru/" text="Kontaktuj nĂˇs" css_animation="zoomIn" margin_top="30"][divider line_type="No Line" custom_height="60"][/vc_column][/vc_row]" (11995) -> "[vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" top_padding="100" bottom_padding="100" text_color="dark" text_align="left" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none" shape_type=""][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][divider line_type="No Line" custom_height="50"][vc_column_text el_class="perex"]
+<p style="text-align: center;">Nápaditá pozvánka formát A6. Jednostranná potlač, pozvánka je neotvárateľné.
+Moderné, štýlové, kreatívne pozvánky na oslavu, váš event alebo podujatie.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="50"][tabbed_section style="minimal" tab_change_animation="fade" alignment="left" spacing="side-25px" tab_color="extra-color-gradient-1" vs_content_animation="fade" vs_link_animation="opacity" vs_navigation_alignment="left" vs_navigation_width_2="25%" vs_navigation_func="default" vs_navigation_width="regular" vs_navigation_spacing="15px" vs_navigation_mobile_display="visible" vs_tab_spacing="5%" cta_button_style="accent-color" icon_size="24"][tab icon_family="none" title="Dodanie" id="1726589942007-8" tab_id="1726589942007-3"][vc_column_text]Pozvánky tlačíme nasledujúci deŘ po potvrdení objednávky. Pozvánky je možné vyzdvihnúť si osobne alebo vám budú doručené poštou. Pre urýchlenie procesu prosím zadajte všetky údaje do formulára korektne a bez chýb, aby sa predišlo následným opravám. Každý návrh posielame pred tlačou na schválenie.
+
+Minimálny odber 30 ks pri zobrazenej cene. <strong>V prípade požiadavky na zmenu farieb, písma a pod. napíšte nám prosím do Poznámok.</strong>[/vc_column_text][/tab][tab icon_family="none" title="Cenník" id="1726589942045-0" tab_id="1726589942046-2"][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlače pri nižších objemoch DL</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">2,4 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">2 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">1,3 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlače pri nižších objemoch štvorec</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">2,4 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">2 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">1,3 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][vc_column_text]
+<table width="400px">
+<tbody>
+<tr>
+<td colspan="2" width="324"><strong>Cena tlače pri nižších objemoch A6</strong></td>
+</tr>
+<tr>
+<td width="192">1-10 ks</td>
+<td width="132">1,6 EUR</td>
+</tr>
+<tr>
+<td width="192">11-20ks</td>
+<td width="132">1,7 EUR</td>
+</tr>
+<tr>
+<td width="192">21-29ks</td>
+<td width="132">1,05 EUR</td>
+</tr>
+<tr>
+<td width="192">30ks +</td>
+<td width="132">0,89 EUR</td>
+</tr>
+</tbody>
+</table>
+[/vc_column_text][/tab][tab icon_family="none" title="Formáty" id="1726589942080-3" tab_id="1726589942081-2"][vc_column_text]<strong>Dostupné formáty pre tento typ pozvánky</strong>
+
+<strong>Formát A6</strong> - 14,8 x 10,8 cm (alebo 10,8 x 14,8 cm)
+<strong>Formát Štvorec</strong> - 14,8 x 14,8 cm
+<strong>Formát DL</strong> - 20 x 10 cm
+
+*Formáty prepracujeme za grafický poplatok 5 EUR.[/vc_column_text][/tab][/tabbed_section][divider line_type="No Line" custom_height="60"][vc_column_text]
+<h3 style="text-align: center;">Typ papiera</h3>
+[/vc_column_text][divider line_type="Small Line" line_alignment="center" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20" custom_line_width="80"][vc_column_text]
+<p style="text-align: center;">Podľa typu pozvánky je používaný buď matný alebo lesklý papier gramáže 300 g/m2. Pozvánky je možné tlačiť aj na kreatívne papiere. Pre výber kreatívneho papiera nás prosím kontaktujte. Príplatok za kreatívny papier je 40 centov na kus.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="30"][vc_column_text]
+<p style="text-align: center;"><strong>UKØŽKA KREATÍVNYCH PAPIEROV</strong></p>
+[/vc_column_text][vc_gallery type="image_grid" images="69,70,71,72,73,80,74,75,76,77,78,79" image_grid_loading="default" layout="constrained_fullwidth" item_spacing="5px" gallery_style="5" load_in_animation="none" img_size="300x200"][divider line_type="No Line" custom_height="60"][vc_column_text]
+<h3 style="text-align: center;">Kvalita spracovania</h3>
+[/vc_column_text][divider line_type="Small Line" line_alignment="center" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20" custom_line_width="80"][vc_column_text]
+<p style="text-align: center;">Pozvánky tlačíme na profesionálnych kopírovacích strojoch značky Xerox. Následný orez a finálne spracovanie prebieha v rúkach skúsených odborníkov. Technológia tlače je flat, čo znamená, že farebné pokrytie papiera je hladké. Vhodným grafickým prevedením však aj pri tejto technológii vieme docieliť jemné vystúpenie tlače, tzv. light 3D effect.</p>
+<p style="text-align: center;">Pozvánky sú podľa typu tlačené na papieri im určenom pre dosiahnutie najvyšších kvalít. Na prianie zákazníka je možné papier zmeniť. Zmenu papiera odporúčame pre dosiahnutie najlepšieho výsledku konzultovať vopred.</p>
+[/vc_column_text][divider line_type="No Line" custom_height="60"][divider line_type="Full Width Line" line_thickness="1" divider_color="extra-color-gradient-1" custom_height="20"][divider line_type="No Line" custom_height="60"][vc_row_inner column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" text_align="left" row_position="default" row_position_tablet="inherit" row_position_phone="inherit" overflow="visible" pointer_events="all"][vc_column_inner column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" overflow="visible" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][vc_column_text]
+<h2 style="text-align: center;">Obálky na pozvánky na oslavu</h2>
+<p style="text-align: center;">V ponuke máme klasické biele obálky alebo prémiové luxusné obálky za 0,65 Eur/kus.</p>
+[/vc_column_text][vc_gallery type="image_grid" images="1096,1097,1098,1099,1100,1101,1102,1103,1104,1105,1106,1107,1108" image_grid_loading="default" layout="constrained_fullwidth" item_spacing="5px" gallery_style="7" load_in_animation="none" img_size="300x200"][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row][vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" text_color="dark" text_align="left" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none"][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][vc_column_text]
+<h3 style="text-align: center;">Podobné pozvánky</h3>
+[/vc_column_text][nectar_portfolio layout="3" category="na-narodeniny" project_style="7" item_spacing="default" load_in_animation="none" projects_per_page="6" project_offset="1"][divider line_type="No Line" custom_height="60"][/vc_column][/vc_row][vc_row type="in_container" full_screen_row_position="middle" column_margin="default" column_direction="default" column_direction_tablet="default" column_direction_phone="default" scene_position="center" text_color="dark" text_align="center" row_border_radius="none" row_border_radius_applies="bg" overflow="visible" overlay_strength="0.3" gradient_direction="left_to_right" shape_divider_position="bottom" bg_image_animation="none" gradient_type="default" shape_type=""][vc_column column_padding="no-extra-padding" column_padding_tablet="inherit" column_padding_phone="inherit" column_padding_position="all" column_element_direction_desktop="default" column_element_spacing="default" desktop_text_alignment="default" tablet_text_alignment="default" phone_text_alignment="default" background_color_opacity="1" background_hover_color_opacity="1" column_backdrop_filter="none" column_shadow="none" column_border_radius="none" column_link_target="_self" column_position="default" gradient_direction="left_to_right" overlay_strength="0.3" width="1/1" tablet_width_inherit="default" animation_type="default" bg_image_animation="none" border_type="simple" column_border_width="none" column_border_style="solid"][nectar_gradient_text heading_tag="h3" color="extra-color-gradient-2" gradient_direction="horizontal" text="Nenašiel si čo si hľadal?" margin_bottom="10"][vc_custom_heading text="Ozvi sa nám a pozvánku môžeš mať priamo na mieru." font_container="tag:h2|font_size:52|text_align:center|line_height:52px" use_theme_fonts="yes" css_animation="fadeInUp"][divider line_type="No Line" custom_height="10"][vc_custom_heading text="So spracovaním návrhu ti radi pomôžeme." font_container="tag:p|text_align:center|color:rgba(0%2C0%2C0%2C0.7)" use_theme_fonts="yes" css_animation="fadeInUp" css=".vc_custom_1543948894844{margin-top: 10px !important;margin-bottom: 10px !important;}"][nectar_btn size="large" button_style="regular" button_color_2="extra-color-gradient-2" icon_family="default_arrow" url="/pozvanka-na-mieru/" text="Kontaktuj nás" css_animation="zoomIn" margin_top="30"][divider line_type="No Line" custom_height="60"][/vc_column][/vc_row]" (11809) | Ratio: 0.984 | Has Repl: true
+[METADATA] No fix needed or safety check failed.

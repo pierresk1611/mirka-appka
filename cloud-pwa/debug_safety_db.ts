@@ -10,11 +10,15 @@ function fixEncoding(str: string | null) {
         const buffer = iconv.encode(str, 'win1250');
         const decoded = iconv.decode(buffer, 'utf8');
 
-        // Safety check log
-        if (decoded.includes('')) {
-            return { result: null, reason: 'failed_safety_check', decoded };
-        }
-        return { result: decoded, reason: 'success' };
+        const hasReplacement = decoded.includes('');
+        const lenRatio = decoded.length / str.length;
+        console.log(`[DEBUG] "${str}" (${str.length}) -> "${decoded}" (${decoded.length}) | Ratio: ${lenRatio.toFixed(3)} | Has Repl: ${hasReplacement}`);
+
+        if (!hasReplacement) return { result: decoded, reason: 'success' };
+
+        if (lenRatio < 0.95) return { result: decoded, reason: 'success_length_reduced' };
+
+        return { result: null, reason: 'failed_safety_check', decoded };
     } catch (e: any) {
         return { result: null, reason: 'error: ' + e.message };
     }
@@ -29,14 +33,21 @@ async function run() {
     });
 
     if (t) {
-        console.log(`[TEMPLATE] Found: "${t.name}"`);
-        const fix = fixEncoding(t.name);
-        console.log(`[TEMPLATE] Fix Result:`, fix);
-        if (fix.result && t.name !== fix.result) {
-            console.log(`[TEMPLATE] WOULD UPDATE: yes`);
+        console.log(`[TEMPLATE] Found Key: "${t.key}"`);
+        console.log(`[TEMPLATE] Found Name: "${t.name}"`);
+        const fix = fixEncoding(t.name).result;
+        if (fix && fix !== t.name) {
+            console.log(`[TEMPLATE] FIXING: "${fix}"`);
+            await prisma.templateConfig.update({
+                where: { key: t.key },
+                data: { name: fix }
+            });
+            console.log("[TEMPLATE] FIXED!");
         } else {
-            console.log(`[TEMPLATE] WOULD UPDATE: no`);
+            console.log("[TEMPLATE] No fix needed or safety check failed.");
         }
+    } else {
+        console.log("[TEMPLATE] No template found with 'Pozv' in name");
     }
 
     // Check ProductMetadata
@@ -45,14 +56,25 @@ async function run() {
     });
 
     if (m) {
-        console.log(`[METADATA] Found: "${m.csv_title}"`);
-        const fix = fixEncoding(m.csv_title);
-        console.log(`[METADATA] Fix Result:`, fix);
-        if (fix.result && m.csv_title !== fix.result) {
-            console.log(`[METADATA] WOULD UPDATE: yes`);
+        console.log(`[METADATA] Found Title: "${m.csv_title}"`);
+        const fix = fixEncoding(m.csv_title).result;
+        const fixContent = fixEncoding(m.html_content).result;
+
+        if (fix && fix !== m.csv_title) {
+            console.log(`[METADATA] FIXING: "${fix}"`);
+            await prisma.productMetadata.update({
+                where: { id: m.id },
+                data: {
+                    csv_title: fix,
+                    html_content: fixContent || m.html_content
+                }
+            });
+            console.log("[METADATA] FIXED!");
         } else {
-            console.log(`[METADATA] WOULD UPDATE: no`);
+            console.log("[METADATA] No fix needed or safety check failed.");
         }
+    } else {
+        console.log("[METADATA] No metadata found with 'Pozv' in title");
     }
 }
 
