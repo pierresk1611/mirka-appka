@@ -101,6 +101,30 @@ export async function POST(request: Request) {
                                     matchedKey = matchTemplate(productName);
                                 }
 
+                                // --- METADATA MATCHING (Pricing) ---
+                                let matchedMetadataId = null;
+                                let matchedMetadataSku = null;
+
+                                // A) Try by SKU first
+                                if (sku) {
+                                    const metaBySku = await prisma.productMetadata.findFirst({
+                                        where: { sku: sku }
+                                    });
+                                    if (metaBySku) matchedMetadataId = metaBySku.id;
+                                }
+
+                                // B) Try by Strict ID in Name (e.g. 2025_110)
+                                if (!matchedMetadataId) {
+                                    const strictId = extractTemplateId(productName);
+                                    if (strictId) {
+                                        const metaById = await prisma.productMetadata.findFirst({
+                                            where: { csv_title: { contains: strictId } }
+                                        });
+                                        if (metaById) matchedMetadataId = metaById.id;
+                                    }
+                                }
+                                // -----------------------------------
+
                                 let itemMetaText = [];
                                 if (item.meta_data && Array.isArray(item.meta_data)) {
                                     for (const meta of item.meta_data) {
@@ -116,6 +140,7 @@ export async function POST(request: Request) {
                                     where: { id: `${savedOrder.id}-${item.id}` }, // Simplified unique ID
                                     update: {
                                         template_key: matchedKey,
+                                        product_metadata_id: matchedMetadataId,
                                         source_text: sourceText,
                                         quantity: actualQty,
                                         sku: sku,
@@ -127,6 +152,7 @@ export async function POST(request: Request) {
                                         woo_item_id: item.id,
                                         product_name_raw: productName,
                                         template_key: matchedKey,
+                                        product_metadata_id: matchedMetadataId,
                                         source_text: sourceText,
                                         quantity: actualQty,
                                         sku: sku,

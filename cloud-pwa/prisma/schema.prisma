@@ -51,6 +51,8 @@ model OrderItem {
   status           String          @default("PENDING")
   sku              String?
   format           String?
+  product_metadata_id String?
+  product_metadata    ProductMetadata? @relation(fields: [product_metadata_id], references: [id])
 }
 
 model TemplateConfig {
@@ -81,6 +83,8 @@ model ProductMetadata {
   image_url    String?
   html_content String? // Original HTML from CSV
   source_csv   String? // Filename of imported CSV
+  sku          String? // SKU from CSV
+  order_items  OrderItem[]
   templates    TemplateConfig[]
   created_at   DateTime         @default(now())
 }

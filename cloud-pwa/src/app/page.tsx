@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import Link from 'next/link';
-import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock, Link as LinkIcon } from 'lucide-react';
+import ManualLinkModal from '../components/ManualLinkModal';
 
 interface OrderItem {
   id: string;
@@ -11,12 +12,16 @@ interface OrderItem {
   template_key: string;
   status: string;
   quantity: number;
-  template?: {
+  product_metadata?: {
     pricing_json?: string;
-    product_metadata?: {
-      pricing_json?: string;
-    };
   };
+};
+product_metadata ?: {
+  id: string;
+  pricing_json?: string;
+  csv_title?: string;
+  sku?: string;
+};
 }
 
 interface Order {
@@ -33,6 +38,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [linkModalItem, setLinkModalItem] = useState<OrderItem | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -150,12 +156,24 @@ export default function Dashboard() {
                   // Calculate prices for all items
                   const itemDetails = order.items.map(item => {
                     const template = (item as any).template;
-                    const pricingJson = template?.pricing_json || template?.product_metadata?.pricing_json || null;
+                    // Prefer direct metadata on item, then template metadata, then template pricing
+                    const pricingJson = item.product_metadata?.pricing_json || template?.product_metadata?.pricing_json || template?.pricing_json || null;
+                    const matchedSource = item.product_metadata ? 'MANUAL/MATCH' : (template?.product_metadata ? 'TEMPLATE_META' : (template?.pricing_json ? 'TEMPLATE' : null));
 
                     if (!pricingJson) return { qty: item.quantity, unit: null, total: null };
 
                     try {
-                      const pricing: Record<string, number> = JSON.parse(pricingJson);
+                      const pricingRaw = JSON.parse(pricingJson);
+                      // Normalize pricing values (handle strings with commas)
+                      const pricing: Record<string, number> = {};
+                      Object.entries(pricingRaw).forEach(([k, v]) => {
+                        if (typeof v === 'string') {
+                          pricing[k] = parseFloat((v as string).replace(',', '.'));
+                        } else {
+                          pricing[k] = v as number;
+                        }
+                      });
+
                       let unitPrice = 0;
 
                       // Sort ranges to handle overlaps or specific ordering (Highest first)
@@ -248,7 +266,19 @@ export default function Dashboard() {
                           {itemDetails.map((d, i) => (
                             <div key={i} className="font-bold text-slate-900">
                               {d.total ? d.total.toFixed(2) + ' €' : (
-                                <span className="text-[10px] text-orange-400 font-normal italic">Chýba cenník</span>
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-orange-400 font-normal italic">Chýba cenník</span>
+                                  {/* Debug info: Check if we searched for something */}
+                                  <span className="text-[9px] text-slate-300">
+                                    {(item as any).template_key === 'UNKNOWN' ? 'Nenašiel sa Template' : 'Template bez ceny'}
+                                  </span>
+                                  <button
+                                    onClick={() => setLinkModalItem(item)}
+                                    className="mt-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded hover:bg-blue-100 flex items-center gap-1"
+                                  >
+                                    <LinkIcon className="w-3 h-3" /> Priradiť
+                                  </button>
+                                </div>
                               )}
                             </div>
                           ))}
@@ -261,12 +291,21 @@ export default function Dashboard() {
                           <div className="w-10 h-10 rounded border border-gray-100 overflow-hidden bg-slate-50 relative group">
                             {(() => {
                               const item = order.items[0]; // Just show first item thumbnail
-                              let thumbUrl = (item as any).preview_url || (item as any).template?.image_url;
-                              if (!(item as any).preview_url && item.status === 'AI_READY' && item.template_key !== 'UNKNOWN') {
+                              let thumbUrl = (item as any).preview_url
+                                || item.product_metadata?.image_url
+                                || (item as any).template?.image_url
+                                || (item as any).template?.product_metadata?.image_url;
+
+                              if (thumbUrl && thumbUrl.startsWith('http:')) {
+                                // Try to upgrade to https if possible, or just log
+                                thumbUrl = thumbUrl.replace('http:', 'https:');
+                              }
+
+                              if (!thumbUrl && item.status === 'AI_READY' && item.template_key !== 'UNKNOWN') {
                                 thumbUrl = `/api/preview/generate?itemId=${item.id}`;
                               }
                               return thumbUrl ? (
-                                <img src={thumbUrl} className="w-full h-full object-cover group-hover:scale-125 transition" />
+                                <img src={thumbUrl} className="w-full h-full object-cover group-hover:scale-125 transition" referrerPolicy="no-referrer" />
                               ) : <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300">N/A</div>;
                             })()}
                           </div>
@@ -319,6 +358,21 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+
+      {
+        linkModalItem && (
+          <ManualLinkModal
+            itemId={linkModalItem.id}
+            productName={linkModalItem.product_name_raw}
+            currentMetadataId={linkModalItem.product_metadata?.id}
+            onLink={() => {
+              fetchOrders(); // Refresh to see changes
+            }}
+            onClose={() => setLinkModalItem(null)}
+          />
+        )
+      }
     </AppLayout >
   );
 }
