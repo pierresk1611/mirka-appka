@@ -43,6 +43,8 @@ export default function TemplatesPage() {
     const [repairProgress, setRepairProgress] = useState(0);
     const [repairStatus, setRepairStatus] = useState('');
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const fetchTemplates = async () => {
         try {
             const res = await fetch('/api/templates');
