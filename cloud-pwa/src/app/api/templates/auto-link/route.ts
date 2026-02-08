@@ -15,11 +15,31 @@ function normalize(str: string): string {
 
 export async function POST() {
     try {
-        // 1. Fetch all templates that don't have a main_file set
-        const templates = await prisma.templateConfig.findMany({
+        // 1. Build a "Global File Universe" from all templates that have files
+        const templatesWithFiles = await prisma.templateConfig.findMany({
+            where: { files: { not: null } },
+            select: { files: true }
+        });
+
+        const globalFileSet = new Set<string>();
+        templatesWithFiles.forEach(t => {
+            if (t.files) {
+                try {
+                    const parsed = JSON.parse(t.files);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(f => globalFileSet.add(f));
+                    }
+                } catch (e) { }
+            }
+        });
+
+        const allAvailableFiles = Array.from(globalFileSet);
+        console.log(`Auto-Link: Global File Universe built with ${allAvailableFiles.length} unique files.`);
+
+        // 2. Fetch all templates that need a main_file
+        const templatesToLink = await prisma.templateConfig.findMany({
             where: {
-                main_file: null,
-                files: { not: null }
+                main_file: null
             }
         });
 
@@ -28,66 +48,49 @@ export async function POST() {
         const sampleSize = 10;
         let loggedSampleCount = 0;
 
-        for (const template of templates) {
-            if (!template.files) continue;
+        // 3. Match against Global Universe
+        for (const template of templatesToLink) {
+            const rawKey = template.key;
+            const normalizedKey = normalize(rawKey);
 
-            try {
-                const files: string[] = JSON.parse(template.files);
-                const rawKey = template.key;
-                const normalizedKey = normalize(rawKey);
+            if (!normalizedKey) continue;
 
-                if (!normalizedKey) continue;
+            let bestMatch: string | null = null;
+            const extensions = ['.psd', '.ai', '.pdf'];
 
-                // 2. Search for a file with improved matching
-                let bestMatch: string | null = null;
+            for (const ext of extensions) {
+                const match = allAvailableFiles.find(f => {
+                    const filename = path.basename(f);
+                    const normalizedFilename = normalize(filename);
+                    return normalizedFilename.includes(normalizedKey) && f.toLowerCase().endsWith(ext);
+                });
 
-                // Priority groups: .psd, then .ai, then .pdf
-                const extensions = ['.psd', '.ai', '.pdf'];
-
-                for (const ext of extensions) {
-                    const match = files.find(f => {
-                        const filename = path.basename(f);
-                        const normalizedFilename = normalize(filename);
-                        // Fuzzy check: is the normalized key anywhere in the normalized filename?
-                        return normalizedFilename.includes(normalizedKey) && f.toLowerCase().endsWith(ext);
-                    });
-
-                    if (match) {
-                        bestMatch = match;
-                        break;
-                    }
+                if (match) {
+                    bestMatch = match;
+                    break;
                 }
-
-                if (bestMatch) {
-                    await prisma.templateConfig.update({
-                        where: { key: template.key },
-                        data: {
-                            main_file: bestMatch,
-                            status: 'READY'
-                        }
-                    });
-                    linkedCount++;
-                } else if (loggedSampleCount < sampleSize) {
-                    // Log samples for debugging if no match found
-                    debugLogs.push(`Template Key: "${rawKey}" (Normalized: "${normalizedKey}") -> Available files (sample): ${files.slice(0, 3).map(f => path.basename(f)).join(', ')}`);
-                    loggedSampleCount++;
-                }
-            } catch (e) {
-                console.error(`Failed to parse files for template ${template.key}:`, e);
             }
-        }
 
-        // Final log if everything failed
-        if (linkedCount === 0 && debugLogs.length > 0) {
-            console.log("=== AUTO-LINK DEBUG LOG ===");
-            debugLogs.forEach(log => console.log(log));
-            console.log("===========================");
+            if (bestMatch) {
+                await prisma.templateConfig.update({
+                    where: { key: template.key },
+                    data: {
+                        main_file: bestMatch,
+                        status: 'READY'
+                    }
+                });
+                linkedCount++;
+            } else if (loggedSampleCount < sampleSize) {
+                debugLogs.push(`Template Key: "${rawKey}" (Normalized: "${normalizedKey}") -> Žiadna zhoda v universe (${allAvailableFiles.length} súborov)`);
+                loggedSampleCount++;
+            }
         }
 
         return NextResponse.json({
             success: true,
-            message: `Automatické párovanie dokončené. Spárovaných: ${linkedCount} šablón.`,
+            message: `Automatické párovanie dokončené (Global Match). Spárovaných: ${linkedCount} šablón.`,
             linkedCount,
+            totalFilesScanned: allAvailableFiles.length,
             debugLogs: linkedCount === 0 ? debugLogs : []
         });
 
