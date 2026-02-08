@@ -524,22 +524,34 @@ export default function OrderDetailView() {
                                 </button>
                             </div>
                         ) : (
-                            systemKeys.map(key => (
+                            // Merge standard fields with any extra detected fields
+                            Array.from(new Set(['quote', 'name_main', 'date_time', 'place', 'body_full', ...systemKeys])).map(key => (
                                 <div key={key} className="group">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-tighter group-hover:text-blue-500 transition">
-                                        {key}
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase mb-2 tracking-tighter group-hover:text-blue-500 transition">
+                                        {key === 'quote' && <Globe className="w-3 h-3" />}
+                                        {key === 'name_main' && <User className="w-3 h-3" />}
+                                        {key.includes('date') && <Calendar className="w-3 h-3" />}
+                                        {key === 'place' && <MapPin className="w-3 h-3" />}
+                                        {key === 'body_full' && <Layers className="w-3 h-3" />}
+                                        {key === 'quote' ? 'Citát / Úvodný text' :
+                                            key === 'name_main' ? 'Mená na pozvánke' :
+                                                key === 'date_time' ? 'Dátum a čas' :
+                                                    key === 'place' ? 'Miesto oslavy' :
+                                                        key === 'body_full' ? 'Celý text na tlač' : key}
                                     </label>
-                                    {key === 'body_full' || key.includes('text') ? (
+                                    {(key === 'body_full' || key.includes('text') || key === 'quote') ? (
                                         <textarea
-                                            value={activeFormData[key]}
+                                            value={activeFormData[key] || ''}
                                             onChange={(e) => activeItemId && handleFieldChange(activeItemId, key, e.target.value)}
-                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition h-32"
+                                            placeholder={`Zadajte ${key}...`}
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition h-24"
                                         />
                                     ) : (
                                         <input
                                             type="text"
-                                            value={activeFormData[key]}
+                                            value={activeFormData[key] || ''}
                                             onChange={(e) => activeItemId && handleFieldChange(activeItemId, key, e.target.value)}
+                                            placeholder={`Zadajte ${key}...`}
                                             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition"
                                         />
                                     )}
