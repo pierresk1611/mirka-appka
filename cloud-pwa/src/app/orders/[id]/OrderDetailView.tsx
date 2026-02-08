@@ -256,13 +256,6 @@ export default function OrderDetailView() {
         return <AppLayout><div className="flex justify-center items-center h-full"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div></AppLayout>;
     }
 
-    const activeItem = order.items.find(i => i.id === activeItemId);
-    const activeFormData = activeItemId ? itemForms[activeItemId] : {};
-
-    // System keys from AI results to map
-    const systemKeys = Object.keys(activeFormData);
-
-
     const calculatePrice = (qty: number, pricingJson: string | null) => {
         if (!pricingJson) return null;
         try {
@@ -278,24 +271,22 @@ export default function OrderDetailView() {
 
             for (const [range, price] of entries) {
                 const parts = range.split('-');
+                let min = 0;
+                let max = Infinity;
+
                 if (parts.length === 2) {
-                    const min = parseInt(parts[0].replace(/\D/g, ''));
-                    const max = parseInt(parts[1].replace(/\D/g, ''));
-                    if (qty >= min && qty <= max) {
-                        unitPrice = price;
-                        break;
-                    }
+                    min = parseInt(parts[0].replace(/\D/g, '')) || 0;
+                    max = parseInt(parts[1].replace(/\D/g, '')) || Infinity;
                 } else if (range.includes('+')) {
-                    const val = parseInt(range.replace(/\D/g, ''));
-                    if (qty >= val) {
-                        unitPrice = price;
-                        break;
-                    }
+                    min = parseInt(range.replace(/\D/g, '')) || 0;
                 } else {
-                    const val = parseInt(range.replace(/\D/g, ''));
-                    if (qty >= val) { // Treat single numbers as "at least this many"
-                        unitPrice = price;
-                    }
+                    min = parseInt(range.replace(/\D/g, '')) || 0;
+                    max = min;
+                }
+
+                if (qty >= min && qty <= max) {
+                    unitPrice = price;
+                    break;
                 }
             }
 
@@ -318,6 +309,17 @@ export default function OrderDetailView() {
             return null;
         }
     };
+
+    const activeItem = order.items.find(i => i.id === activeItemId);
+    const activeFormData = activeItemId ? itemForms[activeItemId] : {};
+
+    // Calculate price for the active item for debug/UI
+    const activePricingJson = activeItem?.template?.pricing_json || activeItem?.template?.product_metadata?.pricing_json || null;
+    const activePriceData = activeItem ? calculatePrice(activeItem.quantity, activePricingJson) : null;
+
+    // System keys from AI results to map
+    const systemKeys = Object.keys(activeFormData);
+
 
     return (
         <AppLayout>
@@ -604,15 +606,15 @@ export default function OrderDetailView() {
 
                     {/* Diagnostic Info */}
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                        {priceData ? (
+                        {activePriceData ? (
                             <>
                                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                                     <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Cena / ks</p>
-                                    <p className="text-xl font-bold text-blue-700">{priceData.unit.toFixed(2)} €</p>
+                                    <p className="text-xl font-bold text-blue-700">{activePriceData.unit.toFixed(2)} €</p>
                                 </div>
                                 <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
                                     <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Spolu (Odhad)</p>
-                                    <p className="text-xl font-bold text-white">{priceData.total.toFixed(2)} €</p>
+                                    <p className="text-xl font-bold text-white">{activePriceData.total.toFixed(2)} €</p>
                                 </div>
                             </>
                         ) : (
