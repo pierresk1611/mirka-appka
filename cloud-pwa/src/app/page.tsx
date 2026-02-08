@@ -266,10 +266,12 @@ export default function Dashboard() {
                                   <span className="text-[10px] text-orange-400 font-normal italic">Chýba cenník</span>
                                   {/* Debug info: Check if we searched for something */}
                                   <span className="text-[9px] text-slate-300">
-                                    {(item as any).template_key === 'UNKNOWN' ? 'Nenašiel sa Template' : 'Template bez ceny'}
+                                    {(order.items[i] as any).template_key === 'UNKNOWN'
+                                      ? `Kľúč: ${(order.items[i].product_name_raw.match(/(202[0-9]_\d+)/)?.[0]) || '?'}`
+                                      : `Kľúč: ${order.items[i].template_key}`}
                                   </span>
                                   <button
-                                    onClick={() => setLinkModalItem(item)}
+                                    onClick={() => setLinkModalItem(order.items[i])}
                                     className="mt-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded hover:bg-blue-100 flex items-center gap-1"
                                   >
                                     <LinkIcon className="w-3 h-3" /> Priradiť
