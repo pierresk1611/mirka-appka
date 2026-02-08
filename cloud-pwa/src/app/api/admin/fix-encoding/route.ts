@@ -8,14 +8,12 @@ export const dynamic = 'force-dynamic';
 function fixEncoding(str: string | null): string | null {
     if (!str) return null;
     try {
-        // The error was: UTF-8 file (e.g. "á" = C3 A1) was read as if it were Win1250.
-        // Resulting in "Ăˇ" (C3 -> Ă, A1 -> ˇ).
-        // To fix: 
-        // 1. Encode back to Buffer using Win1250 ("Ăˇ" -> C3 A1)
-        // 2. Decode this Buffer using UTF-8 (C3 A1 -> "á")
-
         const buffer = iconv.encode(str, 'win1250');
-        return iconv.decode(buffer, 'utf8');
+        const decoded = iconv.decode(buffer, 'utf8');
+        // Safety check: If the decoded string contains replacement characters (),
+        // it means the "fix" destroyed valid characters.
+        if (decoded.includes('')) return null;
+        return decoded;
     } catch (e) {
         return str;
     }
@@ -35,7 +33,7 @@ export async function POST(request: Request) {
         for (const item of metadata) {
             const fixedTitle = fixEncoding(item.csv_title);
             const fixedContent = fixEncoding(item.html_content);
-            const fixedName = item.csv_title !== fixedTitle;
+            const fixedName = fixedTitle && item.csv_title !== fixedTitle;
 
             if (fixedName) {
                 log.push(`[METADATA] ${item.csv_title} -> ${fixedTitle}`);
@@ -45,7 +43,7 @@ export async function POST(request: Request) {
                         where: { id: item.id },
                         data: {
                             csv_title: fixedTitle,
-                            html_content: fixedContent
+                            html_content: fixedContent || item.html_content
                         }
                     });
                 }
