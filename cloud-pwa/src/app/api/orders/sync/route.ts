@@ -7,7 +7,7 @@ import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityF
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
 
-export async function POST() {
+export async function POST(request: Request) {
     try {
         // 1. Fetch All Active Stores
         const stores = await prisma.store.findMany();
@@ -115,17 +115,41 @@ export async function POST() {
                                 });
 
                                 // 5. Automatic AI Processing for the item
-                                if (savedItem.status === 'AI_READY' && !savedItem.ai_data && aiKey) {
-                                    try {
-                                        const aiData = await parseOrderText(sourceText, matchedKey, aiKey);
-                                        if (aiData) {
-                                            await prisma.orderItem.update({
-                                                where: { id: savedItem.id },
-                                                data: { ai_data: JSON.stringify(aiData) }
-                                            });
+                                if (savedItem.status === 'AI_READY' && aiKey) {
+                                    // 5.1 Parse AI data if missing
+                                    if (!savedItem.ai_data) {
+                                        try {
+                                            const aiData = await parseOrderText(sourceText, matchedKey, aiKey);
+                                            if (aiData) {
+                                                await prisma.orderItem.update({
+                                                    where: { id: savedItem.id },
+                                                    data: { ai_data: JSON.stringify(aiData) }
+                                                });
+                                            }
+                                        } catch (aiErr) {
+                                            console.error(`AI extraction failed for item ${item.id} in order ${wooOrder.id}:`, aiErr);
                                         }
-                                    } catch (aiErr) {
-                                        console.error(`AI extraction failed for item ${item.id} in order ${id}:`, aiErr);
+                                    }
+
+                                    // 5.2 Trigger preview generation if missing
+                                    if (matchedKey !== 'UNKNOWN') {
+                                        try {
+                                            const protocol = request.headers.get('x-forwarded-proto') || 'http';
+                                            const host = request.headers.get('host');
+                                            const baseUrl = process.env.NEXT_PUBLIC_URL || `${protocol}://${host}`;
+
+                                            // Call the preview generation endpoint
+                                            console.log(`Triggering preview for ${savedItem.id} at ${baseUrl}/api/preview/generate`);
+                                            fetch(`${baseUrl}/api/preview/generate`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ itemId: savedItem.id })
+                                            }).then(r => {
+                                                console.log(`Preview response for ${savedItem.id}: ${r.status}`);
+                                            }).catch(e => console.error('Preview error:', e));
+                                        } catch (e) {
+                                            console.error('Failed to trigger preview:', e);
+                                        }
                                     }
                                 }
                             }

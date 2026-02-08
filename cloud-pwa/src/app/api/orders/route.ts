@@ -29,8 +29,12 @@ export async function GET(request: Request) {
                         status: true,
                         quantity: true,
                         template: {
-                            select: {
-                                pricing_json: true
+                            include: {
+                                product_metadata: {
+                                    select: {
+                                        pricing_json: true
+                                    }
+                                }
                             }
                         }
                     }

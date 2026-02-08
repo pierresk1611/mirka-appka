@@ -11,6 +11,12 @@ interface OrderItem {
   template_key: string;
   status: string;
   quantity: number;
+  template?: {
+    pricing_json?: string;
+    product_metadata?: {
+      pricing_json?: string;
+    };
+  };
 }
 
 interface Order {
@@ -143,13 +149,23 @@ export default function Dashboard() {
                 ) : orders.map(order => {
                   // Calculate prices for all items
                   const itemDetails = order.items.map(item => {
-                    const pricingJson = (item as any).template?.pricing_json; // Cast as any because interface might be lagging
+                    const template = (item as any).template;
+                    const pricingJson = template?.pricing_json || template?.product_metadata?.pricing_json || null;
+
                     if (!pricingJson) return { qty: item.quantity, unit: null, total: null };
 
                     try {
                       const pricing: Record<string, number> = JSON.parse(pricingJson);
                       let unitPrice = 0;
-                      for (const [range, price] of Object.entries(pricing)) {
+
+                      // Sort ranges to handle overlaps or specific ordering (Highest first)
+                      const entries = Object.entries(pricing).sort((a, b) => {
+                        const aMin = parseInt(a[0].split('-')[0].replace(/\D/g, '')) || 0;
+                        const bMin = parseInt(b[0].split('-')[0].replace(/\D/g, '')) || 0;
+                        return bMin - aMin;
+                      });
+
+                      for (const [range, price] of entries) {
                         const parts = range.split('-');
                         if (parts.length === 2) {
                           const min = parseInt(parts[0].replace(/\D/g, ''));
@@ -158,14 +174,26 @@ export default function Dashboard() {
                             unitPrice = price;
                             break;
                           }
-                        } else {
+                        } else if (range.includes('+')) {
                           const val = parseInt(range.replace(/\D/g, ''));
-                          if (range.includes('+') && item.quantity >= val) {
+                          if (item.quantity >= val) {
                             unitPrice = price;
                             break;
                           }
+                        } else {
+                          const val = parseInt(range.replace(/\D/g, ''));
+                          if (item.quantity >= val) {
+                            unitPrice = price;
+                          }
                         }
                       }
+
+                      // Fallback to lowest price if no tier matched
+                      if (unitPrice === 0) {
+                        const fallbackPrice = Object.values(pricing).sort((a, b) => a - b)[0];
+                        unitPrice = fallbackPrice || 0;
+                      }
+
                       return {
                         qty: item.quantity,
                         unit: unitPrice > 0 ? unitPrice : null,

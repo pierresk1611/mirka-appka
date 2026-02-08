@@ -102,7 +102,11 @@ export async function POST(
 
                 // 6. Generate preview automatically
                 try {
-                    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+                    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+                    const host = request.headers.get('host');
+                    const baseUrl = process.env.NEXT_PUBLIC_URL || `${protocol}://${host}`;
+
+                    console.log(`Triggering preview for ${savedItem.id} at ${baseUrl}/api/preview/generate`);
                     const previewRes = await fetch(`${baseUrl}/api/preview/generate`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +122,7 @@ export async function POST(
                         });
                         console.log(`✅ Preview generated for item ${savedItem.id}`);
                     } else {
-                        console.warn(`⚠️ Preview generation failed for item ${savedItem.id}`);
+                        console.warn(`⚠️ Preview generation failed for item ${savedItem.id}: ${previewRes.status}`);
                     }
                 } catch (previewError) {
                     console.error('Preview generation error:', previewError);

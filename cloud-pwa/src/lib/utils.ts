@@ -58,7 +58,27 @@ export function extractQuantityFromMetadata(metaData: any[], defaultQty: number 
         if (complexKeys.includes(meta.key)) {
             const val = meta.value;
 
-            // If it's a string, it might be stringified JSON or a comma-separated list
+            // 2.1 Handle if it's already an object (auto-parsed by SDK)
+            if (typeof val === 'object' && val !== null) {
+                if (Array.isArray(val)) {
+                    for (const entry of val) {
+                        const name = String(entry.name || entry.key || '').toLowerCase();
+                        if (quantityKeys.some(dk => name.includes(dk))) {
+                            const v = extractFromStr(String(entry.value));
+                            if (v) return v;
+                        }
+                    }
+                } else {
+                    for (const [k, v] of Object.entries(val)) {
+                        if (quantityKeys.some(dk => k.toLowerCase().includes(dk))) {
+                            const qty = extractFromStr(String(v));
+                            if (qty) return qty;
+                        }
+                    }
+                }
+            }
+
+            // 2.2 If it's a string, it might be stringified JSON or a comma-separated list
             if (typeof val === 'string') {
                 try {
                     const parsed = JSON.parse(val);
@@ -70,20 +90,19 @@ export function extractQuantityFromMetadata(metaData: any[], defaultQty: number 
                                 if (v) return v;
                             }
                         }
+                    } else if (typeof parsed === 'object' && parsed !== null) {
+                        for (const [k, v] of Object.entries(parsed)) {
+                            if (quantityKeys.some(dk => k.toLowerCase().includes(dk))) {
+                                const qty = extractFromStr(String(v));
+                                if (qty) return qty;
+                            }
+                        }
                     }
                 } catch (e) {
                     // Not JSON, maybe a list like "Text: XYZ, Počet pozvánok: 25"
                     const parts = val.split(/,|;/);
                     for (const part of parts) {
                         const v = extractFromStr(part.trim());
-                        if (v) return v;
-                    }
-                }
-            } else if (Array.isArray(val)) {
-                for (const entry of val) {
-                    const name = String(entry.name || entry.key || '').toLowerCase();
-                    if (quantityKeys.some(dk => name.includes(dk))) {
-                        const v = extractFromStr(String(entry.value));
                         if (v) return v;
                     }
                 }
