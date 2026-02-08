@@ -241,46 +241,43 @@ export default function OrderDetailView() {
     const handleTriggerAll = async () => {
         setSaving(true);
         try {
-            // Generate previews for all items
-            const previewPromises = order!.items.map(async (item) => {
+            // Create PHOTOSHOP_PREVIEW jobs for all items
+            const jobPromises = order!.items.map(async (item) => {
                 try {
-                    const baseUrl = window.location.origin;
-                    const previewRes = await fetch(`${baseUrl}/api/preview/generate`, {
+                    const res = await fetch('/api/jobs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ itemId: item.id })
-                    });
-
-                    if (previewRes.ok) {
-                        const previewUrl = `${baseUrl}/api/preview/generate?itemId=${item.id}`;
-                        await fetch(`/api/orders/${id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
+                        body: JSON.stringify({
+                            type: 'PHOTOSHOP_PREVIEW',
+                            templateKey: item.template_key,
+                            payload: {
                                 itemId: item.id,
                                 ai_data: item.ai_data ? JSON.parse(item.ai_data) : {},
-                                preview_url: previewUrl
-                            })
-                        });
+                                mappings: (item.template as any)?.mappings ? JSON.parse((item.template as any).mappings) : {}
+                            }
+                        })
+                    });
+
+                    if (res.ok) {
                         return { success: true, itemId: item.id };
                     } else {
                         return { success: false, itemId: item.id };
                     }
                 } catch (err) {
-                    console.error(`Preview generation failed for item ${item.id}:`, err);
+                    console.error(`Job creation failed for item ${item.id}:`, err);
                     return { success: false, itemId: item.id };
                 }
             });
 
-            const results = await Promise.all(previewPromises);
+            const results = await Promise.all(jobPromises);
             const successCount = results.filter(r => r.success).length;
 
-            // Refresh order data to show new previews
-            await fetchOrder();
+            alert(`✅ Vytvorených ${successCount} z ${order!.items.length} úloh pre Photoshop! Náhľady sa vygenerujú na pozadí.`);
 
-            alert(`✅ Vygenerované ${successCount} z ${order!.items.length} náhľadov!`);
+            // Start polling for updates
+            setTimeout(() => fetchOrder(), 5000);
         } catch (error) {
-            alert('Chyba pri generovaní náhľadov');
+            alert('Chyba pri vytváraní úloh');
         } finally {
             setSaving(false);
         }

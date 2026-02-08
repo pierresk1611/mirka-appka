@@ -11,55 +11,64 @@ class Imposition {
 
     /**
      * Calculates the best fit (N-up) for a given item size on a sheet.
-     * @param {number} itemWidth - Width in mm (including bleed? No, usually trim size + bleed gap handled separately)
-     * @param {number} itemHeight - Height in mm
+     * @param {number} trimWidth - Final width in mm
+     * @param {number} trimHeight - Final height in mm
+     * @param {number} bleed - Bleed in mm (on each side)
      * @param {string} sheetSize - 'SRA3' or 'A4'
      */
-    calculateLayout(itemWidth, itemHeight, sheetSize = 'SRA3') {
+    calculateLayout(trimWidth, trimHeight, bleed = 2, sheetSize = 'SRA3') {
         const sheet = this.sheets[sheetSize];
         if (!sheet) throw new Error(`Unknown sheet size: ${sheetSize}`);
+
+        const itemW = trimWidth + (bleed * 2);
+        const itemH = trimHeight + (bleed * 2);
 
         // Effective printable area
         const printableW = sheet.width - this.margins.left - this.margins.right;
         const printableH = sheet.height - this.margins.top - this.margins.bottom;
 
         // Try Normal Orientation
-        const layoutNormal = this.getGrid(printableW, printableH, itemWidth, itemHeight);
+        const layoutNormal = this.getGrid(printableW, printableH, itemW, itemH);
 
         // Try Rotated Item Orientation
-        const layoutRotated = this.getGrid(printableW, printableH, itemHeight, itemWidth);
+        const layoutRotated = this.getGrid(printableW, printableH, itemH, itemW);
 
         // Select best fit (max yield)
         const best = (layoutRotated.count > layoutNormal.count) ?
-            { ...layoutRotated, rotated: true } :
-            { ...layoutNormal, rotated: false };
+            { ...layoutRotated, rotated: true, w: itemH, h: itemW } :
+            { ...layoutNormal, rotated: false, w: itemW, h: itemH };
+
+        // Generate Coordinates for the grid
+        const positions = [];
+        for (let r = 0; r < best.rows; r++) {
+            for (let c = 0; c < best.cols; c++) {
+                positions.push({
+                    x: this.margins.left + (c * (best.w + this.gap)),
+                    y: this.margins.top + (r * (best.h + this.gap)),
+                    rotated: best.rotated
+                });
+            }
+        }
 
         return {
             sheet: sheet,
-            item: { width: itemWidth, height: itemHeight },
+            trim: { width: trimWidth, height: trimHeight },
+            full: { width: itemW, height: itemH },
+            bleed: bleed,
             yield: best.count,
             rows: best.rows,
             cols: best.cols,
             rotated: best.rotated,
-            margins: this.margins
+            margins: this.margins,
+            gap: this.gap,
+            positions: positions
         };
     }
 
     getGrid(sheetW, sheetH, itemW, itemH) {
-        // Simple grid calculation
-        // itemW + gap. Last item doesn't need gap? Usually yes for bleed.
-        // Let's assume itemW includes bleed or we add gap.
-
-        // If itemW is the finished size, we need to add bleed + spacing.
-        // The user spec says "Spadávka (Bleed): 2 mm". 
-        // So full block size = Trim + 2*Bleed. But typical imposition adds gutters.
-        // Let's assume input matches the PDF box size (Trim + Bleed).
-        // And we add a small gap if needed.
-
-        // Naive division
-        const cols = Math.floor(sheetW / (itemW + this.gap));
-        const rows = Math.floor(sheetH / (itemH + this.gap));
-
+        // Yield based on simple packing
+        const cols = Math.floor((sheetW + this.gap) / (itemW + this.gap));
+        const rows = Math.floor((sheetH + this.gap) / (itemH + this.gap));
         return { count: cols * rows, cols, rows };
     }
 }
