@@ -213,10 +213,18 @@ export default function TemplatesPage() {
 
                     <button
                         onClick={async () => {
+                            console.log('Repair button clicked');
                             if (!confirm('Naozaj chcete spustiť opravu kódovania pre všetky importované produkty?')) return;
+
+                            const btn = document.getElementById('repair-btn');
+                            if (btn) btn.innerText = 'Opravujem...';
+
                             try {
+                                console.log('Fetching fix-encoding...');
                                 const res = await fetch('/api/admin/fix-encoding?dryRun=false', { method: 'POST' });
+                                console.log('Response status:', res.status);
                                 const data = await res.json();
+                                console.log('Data:', data);
 
                                 if (data.error) {
                                     alert(`Chyba: ${data.error}`);
@@ -225,9 +233,13 @@ export default function TemplatesPage() {
                                     window.location.reload();
                                 }
                             } catch (e: any) {
+                                console.error('Repair failed:', e);
                                 alert('Chyba pri oprave kódovania: ' + e.message);
+                            } finally {
+                                if (btn) btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wrench w-4 h-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> <span>Opraviť</span>';
                             }
                         }}
+                        id="repair-btn"
                         className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2"
                     >
                         <Wrench className="w-4 h-4" />
