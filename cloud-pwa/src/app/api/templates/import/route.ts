@@ -155,7 +155,8 @@ export async function POST(request: Request) {
                 const updateData: any = {
                     pricing_json: pricingJson,
                     image_url: imageUrl,
-                    product_metadata_id: metadata.id
+                    product_metadata_id: metadata.id,
+                    is_in_eshop: true
                 };
 
                 // Only set verified if strict match
@@ -168,6 +169,42 @@ export async function POST(request: Request) {
                     data: updateData
                 });
                 matchCount++;
+            } else if (strictId) {
+                // If no template found but we have a strict ID, create a "Ghost" template
+                // This allows orders to link to this ID and show CSV data (pricing, image)
+                // even if the folder is missing on Dropbox.
+
+                // Check if it already exists (might have been created in previous run or by other means)
+                const existing = await prisma.templateConfig.findUnique({ where: { key: strictId } });
+
+                if (existing) {
+                    await prisma.templateConfig.update({
+                        where: { key: strictId },
+                        data: {
+                            is_verified: true,
+                            is_in_eshop: true,
+                            pricing_json: pricingJson,
+                            image_url: imageUrl,
+                            product_metadata_id: metadata.id
+                        }
+                    });
+                    matchCount++;
+                } else {
+                    await prisma.templateConfig.create({
+                        data: {
+                            key: strictId,
+                            name: title, // Use CSV title as name
+                            status: 'NEW', // Or 'MISSING_DROPBOX'?
+                            is_verified: true,
+                            is_in_eshop: true,
+                            pricing_json: pricingJson,
+                            image_url: imageUrl,
+                            product_metadata_id: metadata.id
+                        }
+                    });
+                    createdCount++;
+                    matchCount++;
+                }
             }
         }
 
