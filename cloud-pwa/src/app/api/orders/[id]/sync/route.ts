@@ -44,7 +44,25 @@ export async function POST(
             const productName = item.name || '';
             const allMetadata = item.meta_data.map((m: any) => `${m.key}: ${formatMetadataValue(m.key, m.value)}`).join('\n');
             const sourceText = `Produkt: ${productName}\n${allMetadata}\nPoznámka: ${order.customer_note || ''}`;
-            const templateKey = matchTemplate(productName);
+
+            let templateKey = matchTemplate(productName);
+
+            // Enhanced Matching: Check DB for strict ID match
+            const strictId = extractTemplateId(productName);
+            if (strictId) {
+                const strictMatch = await prisma.templateConfig.findFirst({
+                    where: {
+                        OR: [
+                            { key: { contains: strictId } },
+                            { name: { contains: strictId } }
+                        ]
+                    }
+                });
+
+                if (strictMatch) {
+                    templateKey = strictMatch.key;
+                }
+            }
 
             const savedItem = await prisma.orderItem.upsert({
                 where: {
@@ -55,7 +73,7 @@ export async function POST(
                     template_key: templateKey,
                     source_text: sourceText,
                     quantity: item.quantity,
-                    status: 'AI_READY'
+                    status: templateKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
                 },
                 create: {
                     id: `${existingOrder.id}-${item.id}`,

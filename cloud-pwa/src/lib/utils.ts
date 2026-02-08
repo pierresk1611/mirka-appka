@@ -8,8 +8,9 @@ export function normalizeText(text: string): string {
 // Helper to extract strict ID from text (e.g. "2025_110")
 export function extractTemplateId(text: string): string | null {
     // Look for YYYY_NNN pattern (e.g. 2025_10 or 2026_110)
-    // Matches 2020-2029 followed by underscore and numbers
-    const regex = /\b(202[0-9])_(\d+)\b/;
+    // Matches 2024-2029 followed by underscore and numbers
+    // Added word boundary or space/dash flexibility
+    const regex = /(202[4-9])_(\d+)/;
     const match = text.match(regex);
     if (match) {
         return match[0]; // Returns full match "2025_110"
@@ -29,10 +30,6 @@ export function matchTemplate(productName: string): string {
 
     if (normalized.includes('pivo')) {
         return 'BIR_PIVO';
-    }
-
-    if (normalized.includes('oslava') || normalized.includes('narodenin')) {
-        return 'BIR_PIVO'; // Fallback if no ID is found
     }
 
     if (normalized.includes('svadobn') || normalized.includes('wedding')) {

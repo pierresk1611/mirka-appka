@@ -39,8 +39,9 @@ export default function TemplatesPage() {
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [editData, setEditData] = useState({ name: '', main_file: '' });
 
-    // Hidden file input ref
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [repairing, setRepairing] = useState(false);
+    const [repairProgress, setRepairProgress] = useState(0);
+    const [repairStatus, setRepairStatus] = useState('');
 
     const fetchTemplates = async () => {
         try {
@@ -155,6 +156,61 @@ export default function TemplatesPage() {
         }
     };
 
+    const handleRepair = async () => {
+        if (!confirm('Naozaj chcete spustiť opravu kódovania pre všetky importované produkty?')) return;
+
+        setRepairing(true);
+        setRepairProgress(0);
+        setRepairStatus('Pripravujem...');
+
+        try {
+            // 1. Get stats
+            const statsRes = await fetch('/api/admin/fix-encoding');
+            const stats = await statsRes.json();
+            if (stats.error) throw new Error(stats.error);
+
+            const total = stats.metadata + stats.templates;
+            let currentProcessed = 0;
+            const batchSize = 50;
+
+            // 2. Process Metadata
+            setRepairStatus('Opravujem názvy produktov...');
+            for (let i = 0; i < stats.metadata; i += batchSize) {
+                const res = await fetch(`/api/admin/fix-encoding?type=metadata&skip=${i}&take=${batchSize}&dryRun=false`, { method: 'POST' });
+                const result = await res.json();
+                if (result.error) throw new Error(result.error);
+
+                currentProcessed += batchSize;
+                setRepairProgress(Math.min(95, Math.round((currentProcessed / total) * 100)));
+            }
+
+            // 3. Process Templates
+            setRepairStatus('Opravujem názvy šablón...');
+            for (let i = 0; i < stats.templates; i += batchSize) {
+                const res = await fetch(`/api/admin/fix-encoding?type=template&skip=${i}&take=${batchSize}&dryRun=false`, { method: 'POST' });
+                const result = await res.json();
+                if (result.error) throw new Error(result.error);
+
+                currentProcessed += batchSize;
+                setRepairProgress(Math.min(99, Math.round((currentProcessed / total) * 100)));
+            }
+
+            setRepairProgress(100);
+            setRepairStatus('Hotovo!');
+            setTimeout(() => {
+                alert('Oprava kódovania bola úspešne dokončená.');
+                window.location.reload();
+            }, 500);
+
+        } catch (e: any) {
+            console.error('Repair failed:', e);
+            alert('Chyba pri oprave: ' + e.message);
+        } finally {
+            setRepairing(false);
+            setRepairStatus('');
+        }
+    };
+
     const filtered = templates.filter(t =>
         t.key.toLowerCase().includes(search.toLowerCase()) ||
         (t.name && t.name.toLowerCase().includes(search.toLowerCase()))
@@ -212,38 +268,20 @@ export default function TemplatesPage() {
                     </button>
 
                     <button
-                        onClick={async () => {
-                            console.log('Repair button clicked');
-                            if (!confirm('Naozaj chcete spustiť opravu kódovania pre všetky importované produkty?')) return;
-
-                            const btn = document.getElementById('repair-btn');
-                            if (btn) btn.innerText = 'Opravujem...';
-
-                            try {
-                                console.log('Fetching fix-encoding...');
-                                const res = await fetch('/api/admin/fix-encoding?dryRun=false', { method: 'POST' });
-                                console.log('Response status:', res.status);
-                                const data = await res.json();
-                                console.log('Data:', data);
-
-                                if (data.error) {
-                                    alert(`Chyba: ${data.error}`);
-                                } else {
-                                    alert(`Oprava dokončená.\nOpravených záznamov: ${data.fixedCount ?? 0}`);
-                                    window.location.reload();
-                                }
-                            } catch (e: any) {
-                                console.error('Repair failed:', e);
-                                alert('Chyba pri oprave kódovania: ' + e.message);
-                            } finally {
-                                if (btn) btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wrench w-4 h-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> <span>Opraviť</span>';
-                            }
-                        }}
-                        id="repair-btn"
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2"
+                        onClick={handleRepair}
+                        disabled={repairing}
+                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border border-slate-700 text-sm font-bold ml-2 relative overflow-hidden disabled:opacity-80"
                     >
-                        <Wrench className="w-4 h-4" />
-                        <span>Opraviť</span>
+                        {repairing && (
+                            <div
+                                className="absolute left-0 top-0 bottom-0 bg-slate-700 transition-all duration-300"
+                                style={{ width: `${repairProgress}%` }}
+                            />
+                        )}
+                        <div className="relative flex items-center gap-2 z-10">
+                            {repairing ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> : <Wrench className="w-4 h-4" />}
+                            <span>{repairing ? `${repairStatus} ${repairProgress}%` : 'Opraviť'}</span>
+                        </div>
                     </button>
 
                     <button
