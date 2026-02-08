@@ -55,6 +55,40 @@ export default function OrderDetailView() {
     // Debug state
     const [showDebug, setShowDebug] = useState(false);
     const [debugData, setDebugData] = useState<any>(null);
+    const [isOpeningPhotoshop, setIsOpeningPhotoshop] = useState(false);
+
+    const handleOpenInPhotoshop = async () => {
+        if (!activeItem || !order || isOpeningPhotoshop) return;
+
+        setIsOpeningPhotoshop(true);
+        try {
+            const res = await fetch('/api/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'PHOTOSHOP_OPEN',
+                    templateKey: activeItem.template_key,
+                    wooId: order.woo_id,
+                    payload: {
+                        itemId: activeItem.id,
+                        ai_data: activeItem.ai_data ? JSON.parse(activeItem.ai_data) : {},
+                        mappings: (activeItem.template as any)?.mappings ? JSON.parse((activeItem.template as any).mappings) : {}
+                    }
+                })
+            });
+
+            if (res.ok) {
+                alert('Príkaz na otvorenie vo Photoshope bol odoslaný lokálnemu agentovi.');
+            } else {
+                alert('Chyba pri odosielaní príkazu.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Chyba pripojenia.');
+        } finally {
+            setTimeout(() => setIsOpeningPhotoshop(false), 3000);
+        }
+    };
 
     const fetchOrder = async () => {
         try {
@@ -443,6 +477,14 @@ export default function OrderDetailView() {
                         <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                             Editor Dát: {activeItem?.template_key}
                         </span>
+                        <h3 className="font-medium text-lg flex items-center gap-2">
+                            {order.items.find(i => i.id === activeItemId)?.product_name_raw}
+                            {(order.items.find(i => i.id === activeItemId) as any)?.format && (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                                    {(order.items.find(i => i.id === activeItemId) as any).format}
+                                </span>
+                            )}
+                        </h3>
                         <div className="flex gap-2">
                             {systemKeys.length > 0 && (
                                 <button
@@ -536,16 +578,27 @@ export default function OrderDetailView() {
 
                             if (displayUrl) {
                                 return (
-                                    <img
-                                        src={displayUrl}
-                                        alt="Preview"
-                                        className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 
-                                        ${(activeItem?.preview_url || activeItem?.status === 'GENERATED' || (activeItem?.status === 'AI_READY' && activeItem?.template_key !== 'UNKNOWN'))
-                                                ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
-                                                : activeItem?.template?.main_file
-                                                    ? 'border-blue-500/50 grayscale-[0.2]'
-                                                    : 'border-orange-500/20 grayscale-[0.5]'}`}
-                                    />
+                                    <div
+                                        onClick={handleOpenInPhotoshop}
+                                        className="cursor-pointer group relative flex items-center justify-center"
+                                    >
+                                        <img
+                                            src={displayUrl}
+                                            alt="Preview"
+                                            className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 
+                                            ${(activeItem?.preview_url || activeItem?.status === 'GENERATED' || (activeItem?.status === 'AI_READY' && activeItem?.template_key !== 'UNKNOWN'))
+                                                    ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                                                    : activeItem?.template?.main_file
+                                                        ? 'border-blue-500/50 grayscale-[0.2]'
+                                                        : 'border-orange-500/20 grayscale-[0.5]'}`}
+                                        />
+                                        <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-sm">
+                                            <div className="bg-white/90 text-blue-900 px-4 py-2 rounded-full font-black text-[10px] uppercase shadow-2xl flex items-center gap-2">
+                                                {isOpeningPhotoshop ? <Loader2 className="w-3 h-3 animate-spin" /> : <Layers className="w-3 h-3" />}
+                                                {isOpeningPhotoshop ? 'Otváram...' : 'Upraviť vo Photoshope'}
+                                            </div>
+                                        </div>
+                                    </div>
                                 );
                             }
 

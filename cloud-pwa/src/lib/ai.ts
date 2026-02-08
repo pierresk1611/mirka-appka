@@ -27,21 +27,18 @@ export async function parseOrderText(text: string, templateKey: string, apiKeyOv
       Input Text: "${text}"
       
       Extraction Rules:
-      1. Use SLOVAK language (slovenčina) for all extracted text and the "body_full" field.
-      2. Always provide a "body_full" field. This should be a beautifully formatted, complete version of the invitation or card text, suitable for printing. Fix typos, capitalize names, and use elegant spacing.
-      3. If the Template Key is "BIR_PIVO" (Beer invitation), extract these specific fields:
-         - "name_main": The name(s) of the person/people inviting (e.g., "Marian Hamšík").
-         - "date": Date and time of the event (e.g., "11.04.2026 o 12:00").
-         - "place": Location/Venue of the event.
-      4. For "FINGERPRINTS" (Odtlačkové obrazy):
-         - "name_main": Names of the couple or person.
-         - "date": Event date.
-         - "place": Event location.
-      5. For wedding templates ("WED_..."):
-         - "names": Names of the bride and groom.
-         - "date": Wedding date and time.
+      1. Use SLOVAK language (slovenčina) for all extracted text.
+      2. Standards for all printing templates:
+         - "quote": Citát alebo úvodný text (e.g., "Dožiť sa radosti...").
+         - "name_main": Hlavné mená (e.g., "Magduš a Janko").
+         - "date_time": Dátum a čas udalosti (e.g., "25.4.2026 o 13:00").
+         - "place": Miesto konania.
+         - "body_full": Kompletný, krásne sformátovaný text celého oznámenia/pozvánky pripravený na tlač. Oprav preklepy, použi elegantné riadkovanie.
       
-      IMPORTANT: If the input text is messy, do your best to reconstruct the human message in Slovak. 
+      3. For wedding templates ("WED_..."), put names of bride and groom in "name_main".
+      4. For "FINGERPRINTS" (Odtlačkové obrazy), extract names and dates accurately.
+      
+      IMPORTANT: If the Template involves a specific design like "2025_110", strictly separate the quote from the names. 
       Output ONLY a valid JSON object.
     `;
 

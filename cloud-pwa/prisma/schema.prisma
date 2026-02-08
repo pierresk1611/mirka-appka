@@ -49,6 +49,8 @@ model OrderItem {
   material         String?
   quantity         Int             @default(1)
   status           String          @default("PENDING")
+  sku              String?
+  format           String?
 }
 
 model TemplateConfig {
@@ -64,6 +66,7 @@ model TemplateConfig {
   is_verified         Boolean          @default(false)
   pricing_json        String? // JSON: { "1-10": 2.4, ... }
   image_url           String?
+  sku                 String?
   product_metadata_id String?
   product_metadata    ProductMetadata? @relation(fields: [product_metadata_id], references: [id])
   last_synced_at      DateTime? // Last CSV import timestamp
@@ -86,4 +89,19 @@ model ProductMetadata {
 model Settings {
   key   String @id
   value String
+}
+
+model Job {
+  id            String   @id @default(uuid())
+  type          String   // ORDER_BATCH, TEMPLATE_SCAN, PHOTOSHOP_OPEN
+  status        String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, ERROR
+  payload       String?  // JSON data for the job
+  result_path   String?  // Path to generated file or folder
+  error_message String?  
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  // Optional relations
+  woo_id        Int?
+  template_key  String?
 }

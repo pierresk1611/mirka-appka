@@ -41,8 +41,40 @@ async function generatePreview(itemId: string) {
     const templateKey = item.template_key;
     console.log(`[Preview] Using template: ${templateKey}`);
 
+    // CHECK IF PSD EXISTS (Verified Template)
+    if (!item.template || templateKey === 'UNKNOWN') {
+        return new ImageResponse(
+            (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#f8d7da',
+                    color: '#721c24',
+                    padding: '80px',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    border: '20px solid #f5c6cb'
+                }}>
+                    <h1 style={{ fontSize: '80px', marginBottom: '40px' }}>⚠️ PSD šablóna nenájdená</h1>
+                    <p style={{ fontSize: '40px', lineHeight: '1.4' }}>
+                        Systém nespároval položku s reálnym súborom na Dropboxe.<br />
+                        <strong>Skontrolujte názov priečinka na Dropboxe!</strong>
+                    </p>
+                    <div style={{ marginTop: '60px', padding: '20px', backgroundColor: 'white', borderRadius: '10px', fontSize: '30px' }}>
+                        Kód produktu: {item.product_name_raw}<br />
+                        Template Key: {templateKey}
+                    </div>
+                </div>
+            ),
+            { width: 1200, height: 1600 }
+        );
+    }
+
     // Select template component based on template_key
-    // For now, only BIR_PIVO is implemented
+    // For now, only BIR_PIVO is implemented (others fallback to it)
     let TemplateComponent = BIR_PIVO;
 
     try {
@@ -54,11 +86,9 @@ async function generatePreview(itemId: string) {
                     flexDirection: 'column',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: '#1a1a1a',
-                    padding: '80px',
-                    color: '#f5e6d3',
+                    backgroundColor: 'white', // Default back to white
                 }}>
-                    <TemplateComponent {...aiData} />
+                    <TemplateComponent {...aiData} templateKey={templateKey || ''} />
                 </div>
             ),
             {

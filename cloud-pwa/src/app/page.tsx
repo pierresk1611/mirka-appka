@@ -219,9 +219,14 @@ export default function Dashboard() {
                       <td className="p-4">
                         <div className="flex flex-col gap-1">
                           {order.items.map(item => (
-                            <div key={item.id} className="flex items-center gap-2">
+                            <div key={item.id} className="text-xs text-gray-500 flex items-center gap-2">
                               {getStatusBadge(item.status)}
-                              <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.product_name_raw}</span>
+                              <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.quantity}x {item.product_name_raw}</span>
+                              {(item as any).format && (
+                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
+                                  {(item as any).format}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
-import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityFromMetadata } from '@/lib/utils';
+import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityFromMetadata, extractSku, extractFormat } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -61,28 +61,45 @@ export async function POST(request: Request) {
                         if (line_items && line_items.length > 0) {
                             for (const item of line_items) {
                                 const productName = item.name || '';
-                                let matchedKey = matchTemplate(productName);
+                                const sku = extractSku(item);
+                                const format = extractFormat(item);
 
-                                // Enhanced Matching: Check DB for strict ID match
-                                const strictId = extractTemplateId(productName);
-                                if (strictId) {
-                                    // Try to find a template that contains this ID in its key or name
-                                    const strictMatch = await prisma.templateConfig.findFirst({
+                                let matchedKey = 'UNKNOWN';
+
+                                // 1. Priority: SKU Direct Match
+                                if (sku) {
+                                    const skuMatch = await prisma.templateConfig.findFirst({
                                         where: {
                                             OR: [
-                                                { key: { contains: strictId } },
-                                                { name: { contains: strictId } }
+                                                { sku: sku },
+                                                { key: sku },
+                                                { key: { contains: sku } }
                                             ]
                                         }
                                     });
+                                    if (skuMatch) matchedKey = skuMatch.key;
+                                }
 
-                                    if (strictMatch) {
-                                        matchedKey = strictMatch.key;
+                                // 2. Priority: Name Code (2025_110)
+                                if (matchedKey === 'UNKNOWN') {
+                                    const strictId = extractTemplateId(productName);
+                                    if (strictId) {
+                                        const strictMatch = await prisma.templateConfig.findFirst({
+                                            where: {
+                                                OR: [
+                                                    { key: { contains: strictId } },
+                                                    { name: { contains: strictId } }
+                                                ]
+                                            }
+                                        });
+                                        if (strictMatch) matchedKey = strictMatch.key;
                                     }
                                 }
 
-                                // Only process items that match a template or we want to track
-                                // For now, we sync ALL items to the order_items table for visibility
+                                // 3. Priority: Keyword matching fallback
+                                if (matchedKey === 'UNKNOWN') {
+                                    matchedKey = matchTemplate(productName);
+                                }
 
                                 let itemMetaText = [];
                                 if (item.meta_data && Array.isArray(item.meta_data)) {
@@ -95,12 +112,14 @@ export async function POST(request: Request) {
                                 const actualQty = extractQuantityFromMetadata(item.meta_data, item.quantity);
                                 const sourceText = `Produkt: ${productName}\n${itemMetaText.join('\n')}\nPoznámka: ${customer_note || ''}`;
 
-                                const savedItem = await prisma.orderItem.upsert({
+                                const savedItem = await (prisma.orderItem as any).upsert({
                                     where: { id: `${savedOrder.id}-${item.id}` }, // Simplified unique ID
                                     update: {
                                         template_key: matchedKey,
                                         source_text: sourceText,
-                                        quantity: actualQty
+                                        quantity: actualQty,
+                                        sku: sku,
+                                        format: format
                                     },
                                     create: {
                                         id: `${savedOrder.id}-${item.id}`,
@@ -110,6 +129,8 @@ export async function POST(request: Request) {
                                         template_key: matchedKey,
                                         source_text: sourceText,
                                         quantity: actualQty,
+                                        sku: sku,
+                                        format: format,
                                         status: matchedKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
                                     }
                                 });

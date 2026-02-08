@@ -7,9 +7,8 @@ export function normalizeText(text: string): string {
 
 // Helper to extract strict ID from text (e.g. "2025_110")
 export function extractTemplateId(text: string): string | null {
+    if (!text) return null;
     // Look for YYYY_NNN pattern (e.g. 2025_10 or 2026_110)
-    // Matches 2024-2029 followed by underscore and numbers
-    // Added word boundary or space/dash flexibility
     const regex = /(202[4-9])_(\d+)/;
     const match = text.match(regex);
     if (match) {
@@ -18,7 +17,43 @@ export function extractTemplateId(text: string): string | null {
     return null;
 }
 
+export function extractSku(item: any): string | null {
+    // Check direct sku property
+    if (item.sku) return String(item.sku);
+
+    // Check meta_data for catalog_number or sku
+    if (item.meta_data && Array.isArray(item.meta_data)) {
+        for (const meta of item.meta_data) {
+            const key = String(meta.key).toLowerCase();
+            if (key === 'sku' || key === 'catalog_number' || key === 'katalogove_cislo') {
+                return String(meta.value);
+            }
+        }
+    }
+    return null;
+}
+
+export function extractFormat(item: any): string | null {
+    const formatKeys = ['format', 'rozmer', 'velkost', 'size'];
+
+    if (item.meta_data && Array.isArray(item.meta_data)) {
+        for (const meta of item.meta_data) {
+            const key = String(meta.key).toLowerCase();
+            if (formatKeys.some(fk => key.includes(fk))) {
+                return String(meta.value);
+            }
+        }
+    }
+
+    // Check product name for clues like (A6) or (105x148)
+    const nameMatch = (item.name || '').match(/\((A[4-7])\)/i);
+    if (nameMatch) return nameMatch[1].toUpperCase();
+
+    return null;
+}
+
 export function extractQuantityFromMetadata(metaData: any[], defaultQty: number = 1): number {
+    // ... (rest remains same, I'll keep it)
     if (!metaData || !Array.isArray(metaData)) return defaultQty;
 
     const quantityKeys = [

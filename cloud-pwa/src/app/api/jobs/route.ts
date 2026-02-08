@@ -1,54 +1,58 @@
 import { NextResponse } from 'next/server';
-
-// Mock Data Source - In production this would query WP or internal DB
-let jobs = [
-    {
-        id: '1',
-        orderId: '1001',
-        productName: 'Svadobné oznámenie JSO 15',
-        template: 'JSO_15',
-        data: {
-            'NAME_MAIN': 'Peter & Jana',
-            'DATE_MAIN': '24.08.2026'
-        },
-        status: 'pending'
-    },
-    {
-        id: '2',
-        orderId: '1002',
-        productName: 'Svadobné oznámenie WED 042',
-        template: 'WED_042',
-        data: {
-            'NAME_MAIN': 'Martin & Elena',
-            'DATE_MAIN': '15.09.2026'
-        },
-        status: 'pending'
-    }
-];
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-    return NextResponse.json({
-        success: true,
-        count: jobs.length,
-        jobs: jobs
-    });
+    try {
+        const jobs = await prisma.job.findMany({
+            where: { status: 'PENDING' },
+            orderBy: { created_at: 'asc' }
+        });
+
+        return NextResponse.json({
+            success: true,
+            count: jobs.length,
+            jobs: jobs
+        });
+    } catch (e: any) {
+        return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    }
 }
 
 export async function POST(request: Request) {
-    // Agent reports status updates here
-    const body = await request.json();
-    const { jobId, status, resultPath } = body;
+    try {
+        const body = await request.json();
 
-    console.log(`Job ${jobId} update: ${status} (${resultPath})`);
+        // Handle both creation and updates
+        if (body.type && !body.jobId) {
+            // 1. CREATE NEW JOB
+            const job = await prisma.job.create({
+                data: {
+                    type: body.type,
+                    payload: body.payload ? JSON.stringify(body.payload) : null,
+                    template_key: body.templateKey,
+                    woo_id: body.wooId,
+                    status: 'PENDING'
+                }
+            });
+            return NextResponse.json({ success: true, job });
+        } else if (body.jobId) {
+            // 2. UPDATE EXISTING JOB (Agent callback)
+            const { jobId, status, resultPath, error } = body;
 
-    // Update mock status
-    const jobIndex = jobs.findIndex(j => j.id === jobId);
-    if (jobIndex > -1) {
-        if (status === 'completed') {
-            // Remove from queue or mark completed
-            jobs.splice(jobIndex, 1);
+            const updatedJob = await prisma.job.update({
+                where: { id: jobId },
+                data: {
+                    status: status.toUpperCase(),
+                    result_path: resultPath,
+                    error_message: error
+                }
+            });
+
+            return NextResponse.json({ success: true, job: updatedJob });
         }
-    }
 
-    return NextResponse.json({ success: true });
+        return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
+    } catch (e: any) {
+        return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    }
 }
