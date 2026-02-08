@@ -33,6 +33,7 @@ export default function TemplatesPage() {
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [progress, setProgress] = useState(0);
     const [search, setSearch] = useState('');
     const [editingKey, setEditingKey] = useState<string | null>(null);
     const [editData, setEditData] = useState({ name: '', main_file: '' });
@@ -87,28 +88,46 @@ export default function TemplatesPage() {
         if (!file) return;
 
         setImporting(true);
+        setProgress(0);
         const formData = new FormData();
         formData.append('file', file);
 
-        try {
-            const res = await fetch('/api/templates/import', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/templates/import', true);
 
-            if (res.ok) {
-                alert(`Import úspešný!\nSpracované: ${data.processed}\nVytvorené cenníky: ${data.created}\nSpárované šablóny: ${data.matched}`);
-                fetchTemplates(); // Refresh list
-            } else {
-                alert('Chyba pri importe: ' + data.error);
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                setProgress(percentComplete);
             }
-        } catch (error) {
-            alert('Chyba pripojenia');
-        } finally {
+        };
+
+        xhr.onload = async () => {
             setImporting(false);
-            if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
-        }
+            setProgress(0);
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const data = JSON.parse(xhr.responseText);
+                alert(`Import úspešný!\nSpracované: ${data.processed}\nVytvorené cenníky: ${data.created}\nSpárované šablóny: ${data.matched}`);
+                fetchTemplates();
+            } else {
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    alert('Chyba pri importe: ' + (errorData.error || 'Neznáma chyba'));
+                } catch (e) {
+                    alert('Chyba pri importe: ' + xhr.statusText);
+                }
+            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        };
+
+        xhr.onerror = () => {
+            alert('Chyba pripojenia');
+            setImporting(false);
+            setProgress(0);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        };
+
+        xhr.send(formData);
     };
 
     const startEdit = (t: Template) => {
@@ -175,10 +194,18 @@ export default function TemplatesPage() {
                     <button
                         onClick={handleImportClick}
                         disabled={importing}
-                        className="bg-green-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition shadow-lg disabled:opacity-50"
+                        className="bg-green-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition shadow-lg disabled:opacity-50 relative overflow-hidden"
                     >
-                        {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-                        Import CSV
+                        {importing && (
+                            <div
+                                className="absolute left-0 top-0 bottom-0 bg-green-800 transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        )}
+                        <div className="relative flex items-center gap-2 z-10">
+                            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                            {importing ? `Importujem ${progress}%` : 'Import CSV'}
+                        </div>
                     </button>
 
                     <button
