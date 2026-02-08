@@ -15,14 +15,15 @@ function parsePricingHtml(html: string): Record<string, number> | null {
 
     const pricing: Record<string, number> = {};
     // Regex to find rows with quantity and price
-    // Matches: <td>1-10 ks</td>...<td>2,4 EUR</td>
-    const rowRegex = /<tr>\s*<td>\s*([0-9\-\+\s]+)\s*(?:ks|kusov)?\s*<\/td>\s*<td>\s*([0-9,.]+)\s*(?:EUR|€)\s*<\/td>\s*<\/tr>/gi;
+    // Matches: <td>1-10</td>...<td>2,4</td>
+    // Handles various units and spacing
+    const rowRegex = /<tr>\s*<t[dh]>\s*([0-9\-\+\s]+)(?:ks|kusov|kus|ks\.)?\s*<\/t[dh]>\s*<t[dh]>\s*([0-9,.\s]+)\s*(?:EUR|€|Kč|Kc|CZK)?\s*<\/t[dh]>\s*<\/tr>/gi;
 
     let match;
     let found = false;
     while ((match = rowRegex.exec(html)) !== null) {
-        const qtyRange = match[1].trim(); // e.g. "1-10"
-        const priceStr = match[2].replace(',', '.').trim(); // e.g. "2,4" -> "2.4"
+        const qtyRange = match[1].trim();
+        const priceStr = match[2].replace(',', '.').replace(/\s/g, '').trim();
         const price = parseFloat(priceStr);
 
         if (!isNaN(price)) {

@@ -23,7 +23,7 @@ export function extractQuantityFromMetadata(metaData: any[], defaultQty: number 
 
     const quantityKeys = [
         'počet', 'pocet', 'množstvo', 'mnozstvo', 'qty', 'quantity',
-        'počet pozvánok', 'počet oznámení', 'počet kusov', 'ks'
+        'počet pozvánok', 'počet oznámení', 'počet kusov', 'ks', 'ks.', 'mnozstvi', 'ks:'
     ];
 
     const extractFromStr = (str: string): number | null => {

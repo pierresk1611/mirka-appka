@@ -523,25 +523,39 @@ export default function OrderDetailView() {
                         )}
                     </div>
                     <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
-                        {activeItem?.preview_url || activeItem?.template?.image_url ? (
-                            <img
-                                src={activeItem.preview_url || activeItem?.template?.image_url}
-                                alt="Preview"
-                                className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 
-                                ${activeItem?.preview_url || activeItem?.status === 'GENERATED'
-                                        ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
-                                        : activeItem?.template?.main_file
-                                            ? 'border-blue-500/50 grayscale-[0.2]'
-                                            : 'border-orange-500/20 grayscale-[0.5]'}`}
-                            />
-                        ) : (
-                            <div className="text-center text-slate-600">
-                                <div className="w-12 h-12 bg-slate-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Loader2 className="w-6 h-6 opacity-20 animate-spin" />
+                        {(() => {
+                            // Determine the best preview URL
+                            let displayUrl = activeItem?.preview_url || activeItem?.template?.image_url;
+
+                            // If it's ready but no preview_url, construct it dynamically
+                            if (!activeItem?.preview_url && activeItem?.status === 'AI_READY' && activeItem?.template_key !== 'UNKNOWN') {
+                                displayUrl = `/api/preview/generate?itemId=${activeItem.id}&v=${new Date().getTime()}`;
+                            }
+
+                            if (displayUrl) {
+                                return (
+                                    <img
+                                        src={displayUrl}
+                                        alt="Preview"
+                                        className={`max-w-full max-h-full shadow-2xl rounded-sm border-2 transform group-hover:scale-105 transition duration-1000 
+                                        ${(activeItem?.preview_url || activeItem?.status === 'GENERATED' || (activeItem?.status === 'AI_READY' && activeItem?.template_key !== 'UNKNOWN'))
+                                                ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                                                : activeItem?.template?.main_file
+                                                    ? 'border-blue-500/50 grayscale-[0.2]'
+                                                    : 'border-orange-500/20 grayscale-[0.5]'}`}
+                                    />
+                                );
+                            }
+
+                            return (
+                                <div className="text-center text-slate-600">
+                                    <div className="w-12 h-12 bg-slate-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Loader2 className="w-6 h-6 opacity-20 animate-spin" />
+                                    </div>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-30">čakanie na agenta...</p>
                                 </div>
-                                <p className="text-[9px] font-bold uppercase tracking-widest opacity-30">čakanie na agenta...</p>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 </div>
             </div>
@@ -590,14 +604,23 @@ export default function OrderDetailView() {
 
                     {/* Diagnostic Info */}
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="bg-white/60 p-3 rounded-lg border border-purple-200">
-                            <div className="text-[9px] font-black text-purple-400 uppercase mb-1">Počet položiek</div>
-                            <div className="text-lg font-black text-purple-900">{order?.items.length || 0}</div>
-                        </div>
-                        <div className="bg-white/60 p-3 rounded-lg border border-purple-200">
-                            <div className="text-[9px] font-black text-purple-400 uppercase mb-1">Aktívna položka</div>
-                            <div className="text-lg font-black text-purple-900">{activeItem?.product_name_raw || 'N/A'}</div>
-                        </div>
+                        {priceData ? (
+                            <>
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Cena / ks</p>
+                                    <p className="text-xl font-bold text-blue-700">{priceData.unit.toFixed(2)} €</p>
+                                </div>
+                                <div className="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Spolu (Odhad)</p>
+                                    <p className="text-xl font-bold text-white">{priceData.total.toFixed(2)} €</p>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 col-span-2">
+                                <p className="text-[10px] text-orange-400 font-bold uppercase mb-1">Cena</p>
+                                <p className="text-sm font-bold text-orange-700 italic">Doplňte cenník v managere šablón</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

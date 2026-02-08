@@ -238,16 +238,40 @@ export default function Dashboard() {
                       </td>
 
                       {/* Total Price Column */}
-                      <td className="p-4 text-right font-bold text-slate-900">
-                        {itemDetails.map(d => d.total ? d.total.toFixed(2) + ' €' : '-').join(' / ')}
+                      <td className="p-4 text-right">
+                        <div className="flex flex-col items-end">
+                          {itemDetails.map((d, i) => (
+                            <div key={i} className="font-bold text-slate-900">
+                              {d.total ? d.total.toFixed(2) + ' €' : (
+                                <span className="text-[10px] text-orange-400 font-normal italic">Chýba cenník</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </td>
 
                       <td className="p-4 text-right">
-                        <Link href={`/orders/${order.id}`}>
-                          <button className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition shadow-sm font-bold text-xs">
-                            Upraviť Sadu
-                          </button>
-                        </Link>
+                        <div className="flex items-center justify-end gap-3">
+                          {/* Small Thumbnail Indicator */}
+                          <div className="w-10 h-10 rounded border border-gray-100 overflow-hidden bg-slate-50 relative group">
+                            {(() => {
+                              const item = order.items[0]; // Just show first item thumbnail
+                              let thumbUrl = (item as any).preview_url || (item as any).template?.image_url;
+                              if (!(item as any).preview_url && item.status === 'AI_READY' && item.template_key !== 'UNKNOWN') {
+                                thumbUrl = `/api/preview/generate?itemId=${item.id}`;
+                              }
+                              return thumbUrl ? (
+                                <img src={thumbUrl} className="w-full h-full object-cover group-hover:scale-125 transition" />
+                              ) : <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300">N/A</div>;
+                            })()}
+                          </div>
+
+                          <Link href={`/orders/${order.id}`}>
+                            <button className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition shadow-sm font-bold text-xs">
+                              Upraviť
+                            </button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   )
