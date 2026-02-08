@@ -26,7 +26,13 @@ export async function GET(request: Request) {
                         id: true,
                         product_name_raw: true,
                         template_key: true,
-                        status: true
+                        status: true,
+                        quantity: true,
+                        template: {
+                            select: {
+                                pricing_json: true
+                            }
+                        }
                     }
                 }
             }
