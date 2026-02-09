@@ -7,6 +7,31 @@ import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityF
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
 
+// Helper function to extract EPO data from meta_data
+function extractEPOData(metaData: any[]) {
+    if (!metaData || !Array.isArray(metaData)) {
+        return { textContent: null, quantity: null, material: null };
+    }
+
+    const epoMeta = metaData.find(m => m.key === '_tmcartepo_data');
+    if (!epoMeta || !epoMeta.value) {
+        return { textContent: null, quantity: null, material: null };
+    }
+
+    const epoText = String(epoMeta.value);
+
+    // Extract fields using regex
+    const textMatch = epoText.match(/Text pozvánky:\s*([\s\S]+?)(?=\n(?:Počet|Kvalita)|$)/);
+    const quantityMatch = epoText.match(/Počet pozvánok:\s*(\d+)/);
+    const qualityMatch = epoText.match(/Kvalita:\s*(.+?)(?=\n|$)/);
+
+    return {
+        textContent: textMatch?.[1]?.trim() || null,
+        quantity: quantityMatch?.[1] ? parseInt(quantityMatch[1]) : null,
+        material: qualityMatch?.[1]?.trim() || null
+    };
+}
+
 export async function POST(request: Request) {
     try {
         // 1. Fetch All Active Stores
@@ -133,8 +158,14 @@ export async function POST(request: Request) {
                                     }
                                 }
 
-                                const actualQty = extractQuantityFromMetadata(item.meta_data, item.quantity);
-                                const sourceText = `Produkt: ${productName}\n${itemMetaText.join('\n')}\nPoznámka: ${customer_note || ''}`;
+                                // Extract EPO data (Extra Product Options)
+                                const epoData = extractEPOData(item.meta_data);
+                                const actualQty = epoData.quantity || extractQuantityFromMetadata(item.meta_data, item.quantity);
+
+                                // Use EPO text content if available, otherwise use metadata
+                                const sourceText = epoData.textContent
+                                    ? `Produkt: ${productName}\nText pozvánky: ${epoData.textContent}\nPoznámka: ${customer_note || ''}`
+                                    : `Produkt: ${productName}\n${itemMetaText.join('\n')}\nPoznámka: ${customer_note || ''}`;
 
                                 const savedItem = await (prisma.orderItem as any).upsert({
                                     where: { id: `${savedOrder.id}-${item.id}` }, // Simplified unique ID
@@ -144,7 +175,8 @@ export async function POST(request: Request) {
                                         source_text: sourceText,
                                         quantity: actualQty,
                                         sku: sku,
-                                        format: format
+                                        format: format,
+                                        material: epoData.material
                                     },
                                     create: {
                                         id: `${savedOrder.id}-${item.id}`,
@@ -157,6 +189,7 @@ export async function POST(request: Request) {
                                         quantity: actualQty,
                                         sku: sku,
                                         format: format,
+                                        material: epoData.material,
                                         status: matchedKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
                                     }
                                 });

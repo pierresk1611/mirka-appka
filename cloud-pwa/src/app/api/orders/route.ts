@@ -28,7 +28,9 @@ export async function GET(request: Request) {
                         template_key: true,
                         status: true,
                         quantity: true,
+                        preview_url: true,
                         format: true,
+                        material: true,
                         sku: true,
                         product_metadata: {
                             select: {

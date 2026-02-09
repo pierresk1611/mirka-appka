@@ -14,6 +14,7 @@ interface OrderItem {
   quantity: number;
   preview_url?: string;
   format?: string;
+  material?: string;
   product_metadata?: {
     id: string;
     pricing_json?: string;
@@ -243,6 +244,11 @@ export default function Dashboard() {
                               {(item as any)?.format && (
                                 <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
                                   {(item as any)?.format}
+                                </span>
+                              )}
+                              {item?.material && (
+                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">
+                                  {item.material}
                                 </span>
                               )}
                             </div>
