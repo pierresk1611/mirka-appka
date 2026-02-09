@@ -12,6 +12,8 @@ interface OrderItem {
   template_key: string;
   status: string;
   quantity: number;
+  preview_url?: string;
+  format?: string;
   product_metadata?: {
     id: string;
     pricing_json?: string;
@@ -43,7 +45,7 @@ export default function Dashboard() {
       const res = await fetch('/api/orders');
       if (res.ok) {
         const data = await res.json();
-        setOrders(data);
+        setOrders(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Failed to fetch orders');
@@ -73,12 +75,12 @@ export default function Dashboard() {
   };
 
   // Stats Calculation based on items
-  const allItems = orders.flatMap(o => o.items);
+  const allItems = orders?.flatMap(o => o?.items || []).filter(Boolean) || [];
   const stats = {
-    pending: allItems.filter(i => i.status === 'PENDING' || i.status === 'AI_READY').length,
-    processing: allItems.filter(i => i.status === 'GENERATING').length,
-    done: allItems.filter(i => i.status === 'DONE').length,
-    error: allItems.filter(i => i.status === 'ERROR').length,
+    pending: allItems.filter(i => i?.status === 'PENDING' || i?.status === 'AI_READY').length,
+    processing: allItems.filter(i => i?.status === 'GENERATING').length,
+    done: allItems.filter(i => i?.status === 'DONE').length,
+    error: allItems.filter(i => i?.status === 'ERROR').length,
   };
 
   const getStatusBadge = (status: string) => {
@@ -150,15 +152,15 @@ export default function Dashboard() {
               <tbody className="divide-y divide-gray-100 text-sm">
                 {orders.length === 0 ? (
                   <tr><td colSpan={9} className="p-12 text-center text-slate-400 italic">Žiadne objednávky. Kliknite na "Sync".</td></tr>
-                ) : orders.map(order => {
+                ) : (orders || []).filter(item => item !== null && item !== undefined).map((order, index) => {
                   // Calculate prices for all items
-                  const itemDetails = order.items.map(item => {
-                    const template = (item as any).template;
+                  const itemDetails = (order?.items || []).filter(Boolean).map(item => {
+                    const template = (item as any)?.template;
                     // Prefer direct metadata on item, then template metadata, then template pricing
-                    const pricingJson = item.product_metadata?.pricing_json || template?.product_metadata?.pricing_json || template?.pricing_json || null;
-                    const matchedSource = item.product_metadata ? 'MANUAL/MATCH' : (template?.product_metadata ? 'TEMPLATE_META' : (template?.pricing_json ? 'TEMPLATE' : null));
+                    const pricingJson = item?.product_metadata?.pricing_json || template?.product_metadata?.pricing_json || template?.pricing_json || null;
+                    const matchedSource = item?.product_metadata ? 'MANUAL/MATCH' : (template?.product_metadata ? 'TEMPLATE_META' : (template?.pricing_json ? 'TEMPLATE' : null));
 
-                    if (!pricingJson) return { qty: item.quantity, unit: null, total: null };
+                    if (!pricingJson) return { qty: item?.quantity || 0, unit: null, total: null };
 
                     try {
                       const pricingRaw = JSON.parse(pricingJson);
@@ -211,36 +213,36 @@ export default function Dashboard() {
                       }
 
                       return {
-                        qty: item.quantity,
+                        qty: item?.quantity || 0,
                         unit: unitPrice > 0 ? unitPrice : null,
-                        total: unitPrice > 0 ? unitPrice * item.quantity : null
+                        total: unitPrice > 0 ? unitPrice * (item?.quantity || 0) : null
                       };
                     } catch (e) {
-                      return { qty: item.quantity, unit: null, total: null };
+                      return { qty: item?.quantity || 0, unit: null, total: null };
                     }
                   });
 
                   return (
-                    <tr key={order.id} className="hover:bg-blue-50/50 transition">
+                    <tr key={order?.id || index} className="hover:bg-blue-50/50 transition">
                       <td className="p-4">
                         <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold border border-blue-100">
-                          {order.store.name}
+                          {order?.store?.name}
                         </span>
                       </td>
-                      <td className="p-4 font-bold text-slate-900 font-mono">#{order.woo_id}</td>
-                      <td className="p-4 font-medium text-slate-700">{order.customer_name}</td>
+                      <td className="p-4 font-bold text-slate-900 font-mono">#{order?.woo_id}</td>
+                      <td className="p-4 font-medium text-slate-700">{order?.customer_name}</td>
                       <td className="p-4 text-xs text-slate-500">
-                        {new Date(order.created_at).toLocaleDateString('sk-SK')}
+                        {order?.created_at ? new Date(order.created_at).toLocaleDateString('sk-SK') : '-'}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-col gap-1">
-                          {order.items.map(item => (
-                            <div key={item.id} className="text-xs text-gray-500 flex items-center gap-2">
-                              {getStatusBadge(item.status)}
-                              <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item.quantity}x {item.product_name_raw}</span>
-                              {(item as any).format && (
+                          {(order?.items || []).filter(Boolean).map(item => (
+                            <div key={item?.id} className="text-xs text-gray-500 flex items-center gap-2">
+                              {getStatusBadge(item?.status || '')}
+                              <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{item?.quantity}x {item?.product_name_raw}</span>
+                              {(item as any)?.format && (
                                 <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
-                                  {(item as any).format}
+                                  {(item as any)?.format}
                                 </span>
                               )}
                             </div>
@@ -268,12 +270,12 @@ export default function Dashboard() {
                                   <span className="text-[10px] text-orange-400 font-normal italic">Chýba cenník</span>
                                   {/* Debug info: Check if we searched for something */}
                                   <span className="text-[9px] text-slate-300">
-                                    {(order.items[i] as any).template_key === 'UNKNOWN'
-                                      ? `Kľúč: ${(order.items[i].product_name_raw.match(/(202[0-9]_\d+)/)?.[0]) || '?'}`
-                                      : `Kľúč: ${order.items[i].template_key}`}
+                                    {(order?.items?.[i] as any)?.template_key === 'UNKNOWN'
+                                      ? `Kľúč: ${(order?.items?.[i]?.product_name_raw?.match(/(202[0-9]_\d+)/)?.[0]) || '?'}`
+                                      : `Kľúč: ${order?.items?.[i]?.template_key}`}
                                   </span>
                                   <button
-                                    onClick={() => setLinkModalItem(order.items[i])}
+                                    onClick={() => setLinkModalItem(order?.items?.[i] || null)}
                                     className="mt-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded hover:bg-blue-100 flex items-center gap-1"
                                   >
                                     <LinkIcon className="w-3 h-3" /> Priradiť
@@ -290,22 +292,24 @@ export default function Dashboard() {
                           {/* Small Thumbnail Indicator */}
                           <div className="w-10 h-10 rounded border border-gray-100 overflow-hidden bg-slate-50 relative group">
                             {(() => {
-                              const item = order.items[0]; // Just show first item thumbnail
-                              let thumbUrl = (item as any).preview_url
-                                || item.product_metadata?.image_url
-                                || (item as any).template?.image_url
-                                || (item as any).template?.product_metadata?.image_url;
+                              const item = order?.items?.[0]; // Just show first item thumbnail
+                              if (!item) return <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300">N/A</div>;
+
+                              let thumbUrl = item?.preview_url
+                                || item?.product_metadata?.image_url
+                                || (item as any)?.template?.image_url
+                                || (item as any)?.template?.product_metadata?.image_url;
 
                               if (thumbUrl && thumbUrl.startsWith('http:')) {
                                 // Try to upgrade to https if possible, or just log
                                 thumbUrl = thumbUrl.replace('http:', 'https:');
                               }
 
-                              if (!thumbUrl && item.status === 'AI_READY' && item.template_key !== 'UNKNOWN') {
-                                thumbUrl = `/api/preview/generate?itemId=${item.id}`;
+                              if (!thumbUrl && item?.status === 'AI_READY' && item?.template_key !== 'UNKNOWN') {
+                                thumbUrl = `/api/preview/generate?itemId=${item?.id}`;
                               }
-                              return thumbUrl ? (
-                                <img src={thumbUrl} className="w-full h-full object-cover group-hover:scale-125 transition" referrerPolicy="no-referrer" />
+                              return (thumbUrl || 'https://via.placeholder.com/150') ? (
+                                <img src={thumbUrl || 'https://via.placeholder.com/150'} className="w-full h-full object-cover group-hover:scale-125 transition" referrerPolicy="no-referrer" />
                               ) : <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300">N/A</div>;
                             })()}
                           </div>
@@ -325,29 +329,29 @@ export default function Dashboard() {
 
             {/* MOBILE VIEW */}
             <div className="md:hidden space-y-4 p-4 bg-gray-50">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              {(orders || []).filter(item => item !== null && item !== undefined).map((order, index) => (
+                <div key={order?.id || index} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">{order.store.name}</div>
-                      <span className="text-lg font-bold text-slate-800">#{order.woo_id}</span>
-                      <div className="text-sm font-medium text-slate-500">{order.customer_name}</div>
+                      <div className="text-[10px] font-bold text-blue-600 uppercase mb-1">{order?.store?.name}</div>
+                      <span className="text-lg font-bold text-slate-800">#{order?.woo_id}</span>
+                      <div className="text-sm font-medium text-slate-500">{order?.customer_name}</div>
                     </div>
                     <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
-                      {new Date(order.created_at).toLocaleDateString('sk-SK')}
+                      {order?.created_at ? new Date(order.created_at).toLocaleDateString('sk-SK') : '-'}
                     </div>
                   </div>
 
                   <div className="space-y-2 mb-6 bg-gray-50 p-3 rounded-lg">
-                    {order.items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-slate-700 truncate">{item.product_name_raw}</span>
-                        {getStatusBadge(item.status)}
+                    {(order?.items || []).filter(Boolean).map(item => (
+                      <div key={item?.id} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-700 truncate">{item?.product_name_raw}</span>
+                        {getStatusBadge(item?.status || '')}
                       </div>
                     ))}
                   </div>
 
-                  <Link href={`/orders/${order.id}`} className="block">
+                  <Link href={`/orders/${order?.id}`} className="block">
                     <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800">
                       Otvoriť Sadu
                     </button>

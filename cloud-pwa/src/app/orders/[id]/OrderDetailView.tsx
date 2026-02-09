@@ -100,21 +100,21 @@ export default function OrderDetailView() {
 
                 // Initialize forms
                 const forms: any = {};
-                data.items.forEach((item: OrderItem) => {
+                (data?.items || []).forEach((item: OrderItem) => {
                     try {
-                        forms[item.id] = item.ai_data ? JSON.parse(item.ai_data) : {};
+                        forms[item?.id] = item?.ai_data ? JSON.parse(item.ai_data) : {};
                     } catch (e) {
-                        forms[item.id] = {};
+                        forms[item?.id] = {};
                     }
                 });
                 setItemForms(forms);
 
                 // Use the first item by default if none selected
-                if (data.items.length > 0) {
-                    setActiveItemId(prev => prev || data.items[0].id);
+                if (data?.items?.length > 0) {
+                    setActiveItemId(prev => prev || data?.items?.[0]?.id);
 
                     // Fetch mappings for the template of the first item
-                    const templateToFetch = data.items[0].template_key;
+                    const templateToFetch = data?.items?.[0]?.template_key;
                     try {
                         const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`);
                         if (mapRes.ok) {
@@ -242,18 +242,18 @@ export default function OrderDetailView() {
         setSaving(true);
         try {
             // Create PHOTOSHOP_PREVIEW jobs for all items
-            const jobPromises = order!.items.map(async (item) => {
+            const jobPromises = (order?.items || []).map(async (item) => {
                 try {
                     const res = await fetch('/api/jobs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             type: 'PHOTOSHOP_PREVIEW',
-                            templateKey: item.template_key,
+                            templateKey: item?.template_key,
                             payload: {
-                                itemId: item.id,
-                                ai_data: item.ai_data ? JSON.parse(item.ai_data) : {},
-                                mappings: (item.template as any)?.mappings ? JSON.parse((item.template as any).mappings) : {}
+                                itemId: item?.id,
+                                ai_data: item?.ai_data ? JSON.parse(item.ai_data) : {},
+                                mappings: (item?.template as any)?.mappings ? JSON.parse((item.template as any).mappings) : {}
                             }
                         })
                     });
@@ -341,12 +341,12 @@ export default function OrderDetailView() {
         }
     };
 
-    const activeItem = order.items.find(i => i.id === activeItemId);
+    const activeItem = (order?.items || []).find(i => i?.id === activeItemId);
     const activeFormData = activeItemId ? itemForms[activeItemId] : {};
 
     // Calculate price for the active item for debug/UI
     const activePricingJson = activeItem?.template?.pricing_json || activeItem?.template?.product_metadata?.pricing_json || null;
-    const activePriceData = activeItem ? calculatePrice(activeItem.quantity, activePricingJson) : null;
+    const activePriceData = activeItem ? calculatePrice(activeItem?.quantity || 0, activePricingJson) : null;
 
     // System keys from AI results to map
     const systemKeys = Object.keys(activeFormData);
@@ -395,26 +395,26 @@ export default function OrderDetailView() {
 
                 {/* Sub-Tabs for Items */}
                 <div className="flex gap-2 mt-8 overflow-x-auto pb-2">
-                    {order.items.map(item => {
+                    {(order?.items || []).filter(i => i && i.id).map(item => {
                         // Calculate price for this item
-                        const pricingJson = item.template?.pricing_json || item.template?.product_metadata?.pricing_json || null;
-                        const priceData = calculatePrice(item.quantity, pricingJson);
+                        const pricingJson = item?.template?.pricing_json || item?.template?.product_metadata?.pricing_json || null;
+                        const priceData = calculatePrice(item?.quantity || 0, pricingJson);
 
                         return (
                             <button
-                                key={item.id}
-                                onClick={() => setActiveItemId(item.id)}
+                                key={item?.id}
+                                onClick={() => setActiveItemId(item?.id)}
                                 className={`flex flex-col items-start px-4 py-2 rounded-t-lg bg-white border-x border-t transition-all min-w-[150px]
-                                ${activeItemId === item.id
+                                ${activeItemId === item?.id
                                         ? 'border-blue-600 shadow-[0_-4px_10px_rgba(37,99,235,0.2)] relative z-10'
                                         : 'border-gray-200 hover:bg-gray-50 text-gray-400'}
                             `}
                             >
-                                <span className={`text-xs font-bold uppercase tracking-wider ${activeItemId === item.id ? 'text-blue-600' : 'text-gray-500'}`}>
-                                    {item.product_name_raw}
+                                <span className={`text-xs font-bold uppercase tracking-wider ${activeItemId === item?.id ? 'text-blue-600' : 'text-gray-500'}`}>
+                                    {item?.product_name_raw}
                                 </span>
                                 <div className="flex items-center justify-between w-full mt-1">
-                                    <span className="text-[10px] font-mono text-slate-400">{item.quantity} ks</span>
+                                    <span className="text-[10px] font-mono text-slate-400">{item?.quantity} ks</span>
                                     {priceData && (
                                         <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
                                             {priceData.total.toFixed(2)} €
@@ -475,10 +475,10 @@ export default function OrderDetailView() {
                             Editor Dát: {activeItem?.template_key}
                         </span>
                         <h3 className="font-medium text-lg flex items-center gap-2">
-                            {order.items.find(i => i.id === activeItemId)?.product_name_raw}
-                            {(order.items.find(i => i.id === activeItemId) as any)?.format && (
+                            {(order?.items || []).find(i => i?.id === activeItemId)?.product_name_raw}
+                            {((order?.items || []).find(i => i?.id === activeItemId) as any)?.format && (
                                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
-                                    {(order.items.find(i => i.id === activeItemId) as any).format}
+                                    {((order?.items || []).find(i => i?.id === activeItemId) as any).format}
                                 </span>
                             )}
                         </h3>
@@ -578,11 +578,11 @@ export default function OrderDetailView() {
                     <div className="flex-1 flex items-center justify-center p-8 bg-slate-900 overflow-hidden">
                         {(() => {
                             // Determine the best preview URL
-                            let displayUrl = activeItem?.preview_url || activeItem?.template?.image_url;
+                            let displayUrl = activeItem?.preview_url || activeItem?.template?.image_url || 'https://via.placeholder.com/150';
 
                             // If it's ready but no preview_url, construct it dynamically
                             if (!activeItem?.preview_url && activeItem?.status === 'AI_READY' && activeItem?.template_key !== 'UNKNOWN') {
-                                displayUrl = `/api/preview/generate?itemId=${activeItem.id}&v=${new Date().getTime()}`;
+                                displayUrl = `/api/preview/generate?itemId=${activeItem?.id}&v=${new Date().getTime()}`;
                             }
 
                             if (displayUrl) {
@@ -645,9 +645,9 @@ export default function OrderDetailView() {
                         <div className="mb-4 p-4 bg-white/80 rounded-xl border border-purple-200">
                             <div className="text-[10px] font-black text-purple-600 uppercase mb-2">Preview URL pre aktívnu položku:</div>
                             <div className="font-mono text-xs text-purple-900 break-all bg-purple-50 p-2 rounded">
-                                {activeItem.preview_url || '❌ NULL / UNDEFINED'}
+                                {activeItem?.preview_url || '❌ NULL / UNDEFINED'}
                             </div>
-                            {activeItem.preview_url && (
+                            {activeItem?.preview_url && (
                                 <div className="mt-2 text-[10px] text-purple-600">
                                     ✅ URL je nastavená. Ak sa obrázok nezobrazuje, skontrolujte:
                                     <ul className="list-disc ml-4 mt-1">
