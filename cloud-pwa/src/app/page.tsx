@@ -75,6 +75,22 @@ export default function Dashboard() {
     }
   };
 
+  const handleGenerateFinal = async (itemId: string) => {
+    try {
+      const res = await fetch(`/api/orders/item/${itemId}/generate-final`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        alert('Položka označená ako pripravená na tlač!');
+        await fetchOrders(); // Refresh
+      } else {
+        alert('Chyba pri označovaní položky.');
+      }
+    } catch (error) {
+      alert('Chyba pripojenia.');
+    }
+  };
+
   // Stats Calculation based on items
   const allItems = orders?.flatMap(o => o?.items || []).filter(Boolean) || [];
   const stats = {
@@ -325,6 +341,22 @@ export default function Dashboard() {
                               Upraviť
                             </button>
                           </Link>
+
+                          {/* Generate Final Data button for first AI_READY item */}
+                          {(() => {
+                            const readyItem = order?.items?.find(i => i?.status === 'AI_READY' || i?.status === 'DONE');
+                            if (readyItem) {
+                              return (
+                                <button
+                                  onClick={() => handleGenerateFinal(readyItem.id)}
+                                  className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition shadow-sm font-bold text-xs"
+                                >
+                                  Finálne dáta
+                                </button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </td>
                     </tr>
@@ -366,8 +398,9 @@ export default function Dashboard() {
               ))}
             </div>
           </>
-        )}
-      </div>
+        )
+        }
+      </div >
 
 
       {
