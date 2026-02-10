@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-
 export async function GET(request: Request) {
+    console.log("API Orders: Handler started");
     try {
-        console.log("API Orders: Fetching from DB...");
         const orders = await prisma.order.findMany({
             take: 20,
             orderBy: { created_at: 'desc' }
