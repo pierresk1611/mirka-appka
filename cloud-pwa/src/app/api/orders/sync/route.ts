@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         }
 
         let totalSynced = 0;
-        let storeResults = [];
+        let storeResults: any[] = [];
 
         for (const store of stores) {
             try {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
                 console.log(`Syncing orders from ${store.name} (${store.url})...`);
 
                 // Fetch all orders using pagination
-                let allOrders = [];
+                let allOrders: any[] = [];
                 let page = 1;
                 let totalPages = 1;
                 const MAX_PAGES = 1000; // Safety limit to prevent infinite loops
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
                                 }
                                 // -----------------------------------
 
-                                let itemMetaText = [];
+                                let itemMetaText: any[] = [];
                                 if (item.meta_data && Array.isArray(item.meta_data)) {
                                     for (const meta of item.meta_data) {
                                         const formatted = formatMetadataValue(meta.key, meta.value);
