@@ -208,32 +208,44 @@ export async function POST(request: Request) {
                                     ? `Produkt: ${productName}\nText pozvánky: ${epoData.textContent}\nPoznámka: ${customer_note || ''}`
                                     : `Produkt: ${productName}\n${itemMetaText.join('\n')}\nPoznámka: ${customer_note || ''}`;
 
-                                const savedItem = await (prisma.orderItem as any).upsert({
-                                    where: { id: `${savedOrder.id}-${item.id}` }, // Simplified unique ID
-                                    update: {
-                                        template_key: matchedKey,
-                                        product_metadata_id: matchedMetadataId,
-                                        source_text: sourceText,
-                                        quantity: actualQty,
-                                        sku: sku,
-                                        format: format,
-                                        material: epoData.material
-                                    },
-                                    create: {
-                                        id: `${savedOrder.id}-${item.id}`,
-                                        order_id: savedOrder.id,
-                                        woo_item_id: item.id,
-                                        product_name_raw: productName,
-                                        template_key: matchedKey,
-                                        product_metadata_id: matchedMetadataId,
-                                        source_text: sourceText,
-                                        quantity: actualQty,
-                                        sku: sku,
-                                        format: format,
-                                        material: epoData.material,
-                                        status: matchedKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
-                                    }
-                                });
+                                // Ensure template_key exists in TemplateConfig
+                                let templateConfig = await prisma.templateConfig.findUnique({ where: { key: matchedKey } });
+                                if (!templateConfig && matchedKey !== 'UNKNOWN') {
+                                    templateConfig = await prisma.templateConfig.create({ data: { key: matchedKey, status: 'NEW' } });
+                                }
+
+                                let savedItem = null;
+                                try {
+                                    savedItem = await (prisma.orderItem as any).upsert({
+                                        where: { id: `${savedOrder.id}-${item.id}` }, // Simplified unique ID
+                                        update: {
+                                            template_key: matchedKey,
+                                            product_metadata_id: matchedMetadataId,
+                                            source_text: sourceText,
+                                            quantity: actualQty,
+                                            sku: sku,
+                                            format: format,
+                                            material: epoData.material
+                                        },
+                                        create: {
+                                            id: `${savedOrder.id}-${item.id}`,
+                                            order_id: savedOrder.id,
+                                            woo_item_id: item.id,
+                                            product_name_raw: productName,
+                                            template_key: matchedKey,
+                                            product_metadata_id: matchedMetadataId,
+                                            source_text: sourceText,
+                                            quantity: actualQty,
+                                            sku: sku,
+                                            format: format,
+                                            material: epoData.material,
+                                            status: matchedKey !== 'UNKNOWN' ? 'AI_READY' : 'PENDING'
+                                        }
+                                    });
+                                } catch (orderItemErr) {
+                                    console.error(`OrderItem upsert failed for order ${wooOrder.id}, item ${item.id}, template_key ${matchedKey}:`, orderItemErr);
+                                    continue; // Skip this item, continue with next
+                                }
 
                                 // 5. Automatic AI Processing for the item
                                 if (savedItem.status === 'AI_READY' && aiKey) {
