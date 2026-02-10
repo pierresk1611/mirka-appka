@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
 
+export async function GET(request: Request) {
     try {
         console.log("API Orders: Fetching from DB...");
         const orders = await prisma.order.findMany({
