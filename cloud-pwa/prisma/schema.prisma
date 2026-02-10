@@ -8,6 +8,17 @@ datasource db {
   directUrl = "postgres://bed3eba2177c06ad46c038a6a153131b9d5953ad99f349553605a2a6805d2145:sk_4o7eyi1jfZwuacSU5OaSJ@db.prisma.io:5432/postgres?sslmode=require"
 }
 
+  model User {
+    id            String   @id @default(uuid())
+    name          String
+    email         String   @unique
+    password_hash String
+    role          String   @default("OPERATOR")
+    status        String   @default("ACTIVE")
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+  }
+
 model Store {
   id              String   @id @default(uuid())
   name            String
