@@ -57,15 +57,56 @@ export async function POST(request: Request) {
 
                 console.log(`Syncing orders from ${store.name} (${store.url})...`);
 
-                const response = await WooCommerce.get("orders", {
-                    status: "processing",
-                    per_page: 20
-                });
+                // Fetch all orders using pagination
+                let allOrders = [];
+                let page = 1;
+                let totalPages = 1;
+                const MAX_PAGES = 1000; // Safety limit to prevent infinite loops
+                
+                while (page <= totalPages && page <= MAX_PAGES) {
+                    try {
+                        const response = await WooCommerce.get("orders", {
+                            status: "processing",
+                            per_page: 100, // Max allowed by WooCommerce API
+                            page: page
+                        });
 
-                const orders = response.data;
+                        const orders = response.data || [];
+                        
+                        // Get total pages from X-WP-TotalPages header
+                        if (page === 1) {
+                            // Extract total pages from response headers
+                            const totalPagesHeader = response.headers?.['x-wp-totalpages'];
+                            if (totalPagesHeader) {
+                                totalPages = parseInt(totalPagesHeader, 10);
+                                console.log(`  Total pages to fetch: ${totalPages}`);
+                            } else {
+                                // Fallback: if no orders on this page, we've reached the end
+                                totalPages = orders.length === 0 ? page : page + 1;
+                            }
+                        }
+
+                        if (orders.length === 0) {
+                            console.log(`  Reached end of orders at page ${page}`);
+                            break;
+                        }
+
+                        allOrders = allOrders.concat(orders);
+                        console.log(`  Page ${page}: fetched ${orders.length} orders (total so far: ${allOrders.length})`);
+                        page++;
+                    } catch (pageErr) {
+                        console.error(`  Error fetching page ${page} from ${store.name}:`, pageErr);
+                        // If we get an error on a later page, we still have the previous orders
+                        // Don't fail completely, but break the pagination loop
+                        break;
+                    }
+                }
+
+                console.log(`Fetched ${allOrders.length} total orders from ${store.name}`);
+
                 let storeSynced = 0;
 
-                for (const wooOrder of orders) {
+                for (const wooOrder of allOrders) {
                     try {
                         const { id, billing, date_created, line_items, customer_note } = wooOrder;
                         const customerName = `${billing.first_name} ${billing.last_name}`;
