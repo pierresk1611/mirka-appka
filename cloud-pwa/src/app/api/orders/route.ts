@@ -7,7 +7,7 @@ export async function GET(request: Request) {
         console.log("API Orders: Fetching from DB...");
         const orders = await prisma.order.findMany({
             take: 20,
-            orderBy: { date_created: 'desc' }
+            orderBy: { created_at: 'desc' }
         });
         console.log("API Orders: Data sent!");
         return NextResponse.json(orders);
