@@ -6,14 +6,14 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const users = await prisma.user.findMany({
-            orderBy: { created_at: 'desc' },
+            orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
                 name: true,
                 email: true,
                 role: true,
                 status: true,
-                created_at: true
+                createdAt: true
             }
         });
         return NextResponse.json(users);
