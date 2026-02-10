@@ -36,7 +36,7 @@ export async function POST(request: Request) {
             data: {
                 name,
                 email,
-                password, // Note: In a real app, this should be hashed
+                password_hash: password, // Note: In a real app, this should be hashed
                 role: role || 'OPERATOR'
             }
         });
