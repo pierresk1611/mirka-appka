@@ -8,7 +8,7 @@ const prismaClientSingleton = () => {
         url: process.env.PRISMA_DATABASE_URL,
       },
     },
-  }).extends(withAccelerate())
+  }).$extends(withAccelerate())
 }
 
 declare global {

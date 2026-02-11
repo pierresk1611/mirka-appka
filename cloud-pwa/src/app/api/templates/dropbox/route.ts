@@ -38,26 +38,34 @@ export async function GET(request: Request) {
 
         // Fix: If user enters a local Mac path like /Users/apple/Dropbox/TEMPLATES, 
         // we strip the prefix to make it a valid Dropbox cloud path.
-        if (dropboxPath.includes('Dropbox/')) {
+        if (dropboxPath && dropboxPath.includes('Dropbox/')) {
             dropboxPath = '/' + dropboxPath.split('Dropbox/')[1];
         }
 
-        // Dropbox API: Root is represented by an empty string, not "/"
-        if (dropboxPath === '/') dropboxPath = '';
-        if (dropboxPath.startsWith('/') && dropboxPath.length > 1) {
-            // Keep it as is for subfolders, but ensure no trailing slash
+        // Remove double slashes and normalize path
+        if (dropboxPath) {
+            dropboxPath = dropboxPath.replace(/\/\//g, '/');
+            // Dropbox API: Root is represented by an empty string, not "/"
+            // If path starts with '/' and is not just '/', remove the leading slash
+            if (dropboxPath.startsWith('/') && dropboxPath.length > 1) {
+                dropboxPath = dropboxPath.substring(1);
+            }
+            // Ensure no trailing slash
             if (dropboxPath.endsWith('/')) dropboxPath = dropboxPath.slice(0, -1);
         }
+        // If after all normalization, it's just '/', make it empty for Dropbox root
+        if (dropboxPath === '/') dropboxPath = '';
+
 
         const dbx = new Dropbox({ accessToken, fetch });
-        console.log('Testing Dropbox with path:', dropboxPath);
+        console.log('Dropbox: Listing folder:', dropboxPath);
 
         // 1. Recursive Search for PSD and AI files
         // We look for files, then group them by their parent folder.
         let allEntries: any[] = [];
         try {
             const response = await dbx.filesListFolder({
-                path: dropboxPath,
+                path: dropboxPath || '',
                 recursive: true,
                 include_non_downloadable_files: false
             });
