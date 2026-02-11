@@ -22,12 +22,12 @@ export async function POST() {
         });
 
         const globalFileSet = new Set<string>();
-        templatesWithFiles.forEach(t => {
+        templatesWithFiles.forEach((t: any) => {
             if (t.files) {
                 try {
                     const parsed = JSON.parse(t.files);
                     if (Array.isArray(parsed)) {
-                        parsed.forEach(f => globalFileSet.add(f));
+                        parsed.forEach((f: any) => globalFileSet.add(f));
                     }
                 } catch (e) { }
             }
