@@ -29,7 +29,7 @@ export default function SettingsPage() {
             // ... inside addStore ...
             // ... inside addStore ...
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
             const res = await fetch('/api/stores', {
                 method: 'POST',
