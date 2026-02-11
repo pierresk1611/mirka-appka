@@ -721,6 +721,7 @@ export default function OrderDetailView() {
                     {logs.length === 0 && !(!activeItem?.template?.main_file) && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
                 </div>
 <DebugPanel title="Objednávka" data={order} error={undefined} loading={false} />
+            </div>
         </AppLayout>
     );
 }
