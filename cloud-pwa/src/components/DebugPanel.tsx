@@ -15,7 +15,7 @@ export default function DebugPanel({ title, data, error, loading }: DebugProps) 
   // Zisťujeme, či sú kľúče prítomné (bezpečným spôsobom)
   useEffect(() => {
     setEnvStatus({
-      HAS_DB: process.env.NEXT_PUBLIC_DATABASE_URL ? '✅' : '❌',
+      HAS_DB: '❓ (Server-Side)', // Client cannot see DB URL
       HAS_WOO: process.env.NEXT_PUBLIC_WOO_CK ? '✅' : '❌',
       NODE_ENV: process.env.NODE_ENV
     });
@@ -24,14 +24,14 @@ export default function DebugPanel({ title, data, error, loading }: DebugProps) 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] max-w-sm w-full font-mono shadow-2xl">
       <div className={`rounded-lg overflow-hidden border-2 ${error ? 'border-red-500 animate-pulse' : 'border-slate-800'}`}>
-        <button 
+        <button
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full p-2 text-left text-[10px] font-bold flex justify-between items-center ${error ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}
         >
           <span>🐞 DEBUG: {title}</span>
           <span>{isOpen ? '▼ CLOSE' : '▲ OPEN'}</span>
         </button>
-        
+
         {isOpen && (
           <div className="bg-white p-3 text-[10px] max-h-[400px] overflow-y-auto border-t border-slate-200">
             <div className="grid grid-cols-2 gap-1 mb-3 pb-2 border-b">
@@ -39,7 +39,7 @@ export default function DebugPanel({ title, data, error, loading }: DebugProps) 
               <span className={loading ? 'text-orange-500' : error ? 'text-red-600' : 'text-green-600'}>
                 {loading ? '⏳ LOADING' : error ? '❌ ERROR' : '✅ SUCCESS'}
               </span>
-              
+
               <span className="text-gray-500 uppercase font-bold">Items count:</span>
               <span className="font-bold">{Array.isArray(data) ? data.length : data ? '1' : '0'}</span>
             </div>
