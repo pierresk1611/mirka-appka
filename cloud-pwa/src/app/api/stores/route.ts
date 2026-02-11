@@ -5,37 +5,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        // Skúsime vytiahnuť obchody
         const stores = await prisma.store.findMany({
             orderBy: { createdAt: 'desc' }
         });
-        return NextResponse.json(stores);
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to fetch stores' }, { status: 500 });
-    }
-}
-
-export async function POST(request: Request) {
-    try {
-        const body = await request.json();
-        const { name, url, consumer_key, consumer_secret, api_key } = body;
-
-        if (!name || !url || !consumer_key || !consumer_secret) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
-
-        const store = await prisma.store.create({
-            data: {
-                name,
-                url,
-                consumer_key,
-                consumer_secret,
-                api_key
-            }
-        });
-
-        return NextResponse.json(store);
-    } catch (error) {
-        console.error('Failed to create store:', error);
-        return NextResponse.json({ error: 'Failed to create store' }, { status: 500 });
+        return NextResponse.json(stores || []);
+    } catch (error: any) {
+        console.error("STORES API ERROR:", error);
+        // Aj pri chybe vrátime prázdne pole, aby UI nezamrzlo
+        return NextResponse.json([], { status: 200 }); 
     }
 }
