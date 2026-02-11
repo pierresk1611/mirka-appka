@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
+    const stores = await prisma.store.findMany({ orderBy: { createdAt: 'desc' } });
+    return NextResponse.json(stores);
+}
+
+export async function POST(req: Request) {
     try {
-        // Skúsime vytiahnuť obchody
-        const stores = await prisma.store.findMany({
-            orderBy: { createdAt: 'desc' }
+        const { name, url, ck, cs } = await req.json();
+        const store = await prisma.store.create({
+            data: {
+                name,
+                url,
+                consumer_key: ck,
+                consumer_secret: cs,
+            }
         });
-        return NextResponse.json(stores || []);
+        return NextResponse.json(store);
     } catch (error: any) {
-        console.error("STORES API ERROR:", error);
-        // Aj pri chybe vrátime prázdne pole, aby UI nezamrzlo
-        return NextResponse.json([], { status: 200 }); 
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
