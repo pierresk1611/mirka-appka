@@ -12,12 +12,10 @@ export async function POST(request: Request) {
 
         if (!wooUrl || !wooCk || !wooCs) {
             // Try fetching from DB if not provided in body (for checking existing conn)
-            const settings = await prisma.settings.findMany({
-                where: { key: { in: ['WOO_URL', 'WOO_CK', 'WOO_CS'] } }
-            });
-            wooUrl = wooUrl || settings.find(s => s.key === 'WOO_URL')?.value;
-            wooCk = wooCk || settings.find(s => s.key === 'WOO_CK')?.value;
-            wooCs = wooCs || settings.find(s => s.key === 'WOO_CS')?.value;
+            const settings = await prisma.settings.findMany();
+            wooUrl = wooUrl || settings.find((s: any) => s.key === 'WOO_URL')?.value;
+            wooCk = wooCk || settings.find((s: any) => s.key === 'WOO_CK')?.value;
+            wooCs = wooCs || settings.find((s: any) => s.key === 'WOO_CS')?.value;
         }
 
         if (!wooUrl || !wooCk || !wooCs) {

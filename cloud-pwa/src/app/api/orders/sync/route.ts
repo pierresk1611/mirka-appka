@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         // 1. Fetch All Active Stores
         const stores = await prisma.store.findMany();
         const settings = await prisma.settings.findMany();
-        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
+        const aiKey = settings.find((s: any) => s.key === 'OPENAI_API_KEY')?.value;
 
         if (stores.length === 0) {
             return NextResponse.json({ error: 'Žiadne e-shopy nie sú nakonfigurované.' }, { status: 400 });
