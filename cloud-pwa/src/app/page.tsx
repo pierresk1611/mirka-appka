@@ -31,7 +31,7 @@ interface Order {
   woo_id: number;
   customer_name: string;
   status: string;
-  created_at: string;
+  createdAt: string;
   store: { name: string };
   items: OrderItem[];
 }
@@ -250,7 +250,7 @@ export default function Dashboard() {
                       <td className="p-4 font-bold text-slate-900 font-mono">#{order?.woo_id}</td>
                       <td className="p-4 font-medium text-slate-700">{order?.customer_name}</td>
                       <td className="p-4 text-xs text-slate-500">
-                        {order?.created_at ? new Date(order.created_at).toLocaleDateString('sk-SK') : '-'}
+                        {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('sk-SK') : '-'}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-col gap-1">
@@ -377,7 +377,7 @@ export default function Dashboard() {
                       <div className="text-sm font-medium text-slate-500">{order?.customer_name}</div>
                     </div>
                     <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
-                      {order?.created_at ? new Date(order.created_at).toLocaleDateString('sk-SK') : '-'}
+                      {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('sk-SK') : '-'}
                     </div>
                   </div>
 

@@ -29,7 +29,7 @@ async function main() {
             },
             orderBy: [
                 { pricing_json: 'desc' }, // Not-nulls first in Prisma order (usually)
-                { created_at: 'desc' }
+                { createdAt: 'desc' }
             ]
         });
 

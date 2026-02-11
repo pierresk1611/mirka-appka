@@ -119,7 +119,7 @@ export async function POST(request: Request) {
                                 woo_id: id,
                                 store_id: store.id,
                                 customer_name: customerName,
-                                created_at: new Date(date_created)
+                                createdAt: new Date(date_created)
                             }
                         });
 

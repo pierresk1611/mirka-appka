@@ -1,60 +1,29 @@
 # Query: created_at
 # Flags: RegExp
-# ContextLines: 1
 
-14 results - 8 files
-
-.git/COMMIT_EDITMSG:
-  1: Fix: Rename createdAt to createdAt in jobs route to match schema
-  2  
+13 results - 7 files
 
 cloud-pwa/prisma/migrations/20260203135333_init_postgres/migration.sql:
-   8      "status" TEXT NOT NULL DEFAULT 'ACTIVE',
    9:     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  10  
-
-  23      "agent_log" TEXT,
   24:     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  25      "updatedAt" TIMESTAMP(3) NOT NULL,
 
 cloud-pwa/scripts/repair_pricing.ts:
-  31                  { pricing_json: 'desc' }, // Not-nulls first in Prisma order (usually)
-  32:                 { created_at: 'desc' }
-  33              ]
+  32:                 { createdAt: 'desc' }
 
 cloud-pwa/src/app/page.tsx:
-   33    status: string;
    34:   createdAt: string;
-   35    store: { name: string };
-
-  252                        <td className="p-4 text-xs text-slate-500">
   253:                         {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('sk-SK') : '-'}
-  254                        </td>
-
-  379                      <div className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
   380:                       {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('sk-SK') : '-'}
-  381                      </div>
 
 cloud-pwa/src/app/api/orders/sync/route.ts:
-  121                                  customer_name: customerName,
   122:                                 createdAt: new Date(date_created)
-  123                              }
 
 cloud-pwa/src/app/api/stores/route.ts:
-  8          const stores = await prisma.store.findMany({
   9:             orderBy: { createdAt: 'desc' }
-  10          });
 
 cloud-pwa/src/app/api/templates/route.ts:
-  8          const templates = await prisma.templateConfig.findMany({
   9:             orderBy: { createdAt: 'desc' }
-  10          });
 
 cloud-pwa/src/app/orders/[id]/OrderDetailView.tsx:
-   33      status: string;
    34:     createdAt: string;
-   35      store: { name: string };
-
-  370                                  <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {order.customer_name}</span>
-  371:                                 <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(order.created_at).toLocaleDateString('sk-SK')}</span>
-  372                              </div>
+  371:                                 <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(order.createdAt).toLocaleDateString('sk-SK')}</span>

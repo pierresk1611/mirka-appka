@@ -31,7 +31,7 @@ interface Order {
     woo_id: number;
     customer_name: string;
     status: string;
-    created_at: string;
+    createdAt: string;
     store: { name: string };
     items: OrderItem[];
 }
@@ -368,7 +368,7 @@ export default function OrderDetailView() {
                             </div>
                             <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 font-medium">
                                 <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {order.customer_name}</span>
-                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(order.created_at).toLocaleDateString('sk-SK')}</span>
+                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(order.createdAt).toLocaleDateString('sk-SK')}</span>
                             </div>
                         </div>
                     </div>

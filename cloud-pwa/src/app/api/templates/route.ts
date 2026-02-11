@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const templates = await prisma.templateConfig.findMany({
-            orderBy: { created_at: 'desc' }
+            orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(templates);
     } catch (error) {

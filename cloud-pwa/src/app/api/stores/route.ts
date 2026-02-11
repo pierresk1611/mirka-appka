@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const stores = await prisma.store.findMany({
-            orderBy: { created_at: 'desc' }
+            orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(stores);
     } catch (error) {
