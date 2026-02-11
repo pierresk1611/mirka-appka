@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const jobs = await prisma.job.findMany({
             where: { status: 'PENDING' },
-            orderBy: { created_at: 'asc' }
+            orderBy: { createdAt: 'asc' }
         });
 
         return NextResponse.json({
