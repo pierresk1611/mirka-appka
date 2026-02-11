@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
 // --- POST (Uloženie nového e-shopu - Z Nastavení) ---
 export async function POST(req: Request) {
-    console.log("stores POST: Starting...");
+    console.log("stores POST: Starting request processing...");
 
     // 1. OVERENIE TOKENU
     const auth = await authorizeRequest(req);
