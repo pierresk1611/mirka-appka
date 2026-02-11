@@ -27,11 +27,18 @@ export default function SettingsPage() {
         try {
 
             // ... inside addStore ...
+            // ... inside addStore ...
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
             const res = await fetch('/api/stores', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify(newStore)
+                body: JSON.stringify(newStore),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+
             if (res.ok) {
                 (window as any).logToMonitor?.("E-shop úspešne pridaný!", "info");
                 setNewStore({ name: '', url: '', ck: '', cs: '' });
