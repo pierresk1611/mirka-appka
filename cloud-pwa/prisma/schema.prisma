@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Používame Prisma Accelerate
-  url       = env("PRISMA_DATABASE_URL") 
+  // Používame priame spojenie (POSTGRES_URL)
+  url       = env("POSTGRES_URL") 
   // Direct URL musí byť klasická postgres:// adresa pre priame migrácie
   directUrl = env("POSTGRES_URL")
 }

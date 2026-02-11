@@ -1,14 +1,16 @@
 import { PrismaClient } from '@prisma/client'
-import { withAccelerate } from '@prisma/extension-accelerate'
 
 const prismaClientSingleton = () => {
+  const dbUrl = process.env.POSTGRES_URL;
+  console.log("DB Connection init with:", dbUrl ? `${dbUrl.substring(0, 25)}...` : "UNDEFINED");
+
   return new PrismaClient({
     datasources: {
       db: {
-        url: process.env.PRISMA_DATABASE_URL,
+        url: dbUrl,
       },
     },
-  }).$extends(withAccelerate())
+  })
 }
 
 declare global {
