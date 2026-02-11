@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { v4 as uuidv4 } from 'uuid'; // Ak nemáš uuid, Peter nech ho nainštaluje: npm install uuid
+import { randomUUID } from 'crypto'; // Použijeme vstavanú funkciu systému
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const stores = await prisma.store.findMany({ orderBy: { createdAt: 'desc' } });
+        const stores = await prisma.store.findMany({ 
+            orderBy: { createdAt: 'desc' } 
+        });
         return NextResponse.json(stores);
     } catch (err) {
+        console.error("GET STORES ERROR:", err);
         return NextResponse.json([]);
     }
 }
@@ -19,7 +24,7 @@ export async function POST(req: Request) {
 
         const store = await prisma.store.create({
             data: {
-                id: uuidv4(), // Ručne vygenerujeme ID, aby sme predišli chybám
+                id: randomUUID(), // Toto funguje bez inštalovania balíčkov
                 name: name,
                 url: url,
                 consumer_key: ck,
