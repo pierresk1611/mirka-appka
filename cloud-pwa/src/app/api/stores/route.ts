@@ -27,34 +27,44 @@ export async function GET(req: Request) {
 
 // --- POST (Uloženie nového e-shopu - Z Nastavení) ---
 export async function POST(req: Request) {
+    console.log("stores POST: Starting...");
+
     // 1. OVERENIE TOKENU
     const auth = await authorizeRequest(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    if (!auth.ok) {
+        console.error("stores POST: Auth failed", auth.error);
+        return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     try {
-        // 2. PARSOVANIE VSTUPU (Očakáva kľúče: name, url, ck, cs)
-        const { name, url, ck, cs } = await req.json();
+        // 2. PARSOVANIE VSTUPU
+        const body = await req.json();
+        console.log("stores POST: Body received", JSON.stringify(body, null, 2));
+
+        const { name, url, ck, cs } = body;
 
         // 3. VALIDÁCIA VSTUPU
         if (!name || !url || !ck || !cs) {
+            console.error("stores POST: Missing fields", { name, url, ck: !!ck, cs: !!cs });
             return NextResponse.json({ error: "Missing required fields: name, url, ck (consumer_key), or cs (consumer_secret)." }, { status: 400 });
         }
 
-        // 4. ZÁPIS DO DB (Používa názvy stĺpcov z tvojho schema.prisma)
+        // 4. ZÁPIS DO DB
+        console.log("stores POST: Creating DB record...");
         const store = await prisma.store.create({
             data: {
-                id: randomUUID(), // Používame UUID, ako si mal v pôvodnom kóde
+                id: randomUUID(),
                 name,
                 url,
                 consumer_key: ck,
                 consumer_secret: cs
             }
         });
-        return NextResponse.json(store, { status: 201 }); // 201 Created
+        console.log("stores POST: Success", store.id);
+        return NextResponse.json(store, { status: 201 });
 
     } catch (e: any) {
         console.error("DB POST Error:", e);
-        // Toto vráti chybu 500, ak zlyhá DB prístup alebo migrácia
         return NextResponse.json({ error: `Database Write Failed: ${e.message}` }, { status: 500 });
     }
 }
