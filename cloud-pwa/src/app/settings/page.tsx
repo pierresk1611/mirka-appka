@@ -418,8 +418,8 @@ export default function SettingsPage() {
                         Uložiť nastavenia (AI, Dropbox, Hárok)
                     </button>
                 </div>
-<DebugPanel title="Nastavenia" data={undefined} error={undefined} loading={false} />
             </div>
+<DebugPanel title="Nastavenia" data={undefined} error={undefined} loading={false} />
         </AppLayout>
     );
 }

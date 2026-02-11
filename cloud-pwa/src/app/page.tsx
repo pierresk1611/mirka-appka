@@ -401,7 +401,7 @@ export default function Dashboard() {
           </>
         )
         }
-<DebugPanel title="Objednávky" data={orders} error={undefined} loading={false} />      
+<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
 </div >
       {
         linkModalItem && (
