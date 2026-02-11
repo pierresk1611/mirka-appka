@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         });
 
         // Fetch all relevant template configs for these orders to get mappings
-        const templateKeys = Array.from(new Set(orders.flatMap(o => o.items.map(i => i.template_key)).filter(k => k !== null)));
+        const templateKeys = Array.from(new Set(orders.flatMap((o: any) => o.items.map((i: any) => i.template_key)).filter((k: any) => k !== null)));
         const templateConfigs = await prisma.templateConfig.findMany({
             where: { key: { in: templateKeys as string[] } }
         });
