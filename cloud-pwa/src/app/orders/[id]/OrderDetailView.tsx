@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
 import { Loader2, Save, Send, AlertTriangle, Box, Layers, User, Calendar, MapPin, Globe, Database } from 'lucide-react';
+import DebugPanel from '@/components/DebugPanel';
+
 
 interface OrderItem {
     id: string;
@@ -718,6 +720,7 @@ export default function OrderDetailView() {
                     ))}
                     {logs.length === 0 && !(!activeItem?.template?.main_file) && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
                 </div>
+<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
             </div>
         </AppLayout>
     );

@@ -5,6 +5,7 @@ import AppLayout from '../components/AppLayout';
 import Link from 'next/link';
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock, Link as LinkIcon } from 'lucide-react';
 import ManualLinkModal from '../components/ManualLinkModal';
+import DebugPanel from '@/components/DebugPanel';
 
 interface OrderItem {
   id: string;
@@ -400,7 +401,9 @@ export default function Dashboard() {
           </>
         )
         }
+      <DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
       </div >
+
 
 
       {

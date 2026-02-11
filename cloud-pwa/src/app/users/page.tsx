@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '../../components/AppLayout';
 import { User, Shield, Trash2, Edit2, CheckCircle, XCircle, Plus, Loader2, Users } from 'lucide-react';
+import DebugPanel from '@/components/DebugPanel';
 
 interface UserData {
     id: string;
@@ -234,6 +235,8 @@ export default function UserManagement() {
                             </div>
                         </form>
                     </div>
+<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
+
                 </div>
             )}
         </AppLayout>

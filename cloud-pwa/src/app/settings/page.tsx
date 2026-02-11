@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '../../components/AppLayout';
 import { Settings, Save, Loader2, Key, Globe, Folder, Database, Wifi, Plus, Trash2, Layout, AlertTriangle } from 'lucide-react';
+import DebugPanel from '@/components/DebugPanel';
+
 
 interface Store {
     id: string;
@@ -416,7 +418,7 @@ export default function SettingsPage() {
                         Uložiť nastavenia (AI, Dropbox, Hárok)
                     </button>
                 </div>
-
+<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
             </div>
         </AppLayout>
     );
