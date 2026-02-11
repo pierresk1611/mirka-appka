@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     try {
         const settings = await prisma.settings.findMany();
         // Convert array to object { key: value }
-        const settingsMap = settings.reduce((acc: any, curr) => ({ ...acc, [curr.key]: curr.value }), {});
+        const settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {});
         return NextResponse.json(settingsMap);
     } catch (error) {
         return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
