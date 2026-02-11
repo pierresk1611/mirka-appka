@@ -238,7 +238,7 @@ export default function UserManagement() {
 
                 </div>
             )}
-<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
-        </AppLayout>
+<DebugPanel title="Užívatelia" data={users} error={null} loading={false} />        
+</AppLayout>
     );
 }

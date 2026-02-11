@@ -463,7 +463,7 @@ export default function TemplatesPage() {
                     </div>
                 )
             }
-<DebugPanel title="Objednávka" data={order} error={undefined} loading={false} />
+<DebugPanel title="Šablóny" data={templates} error={null} loading={false} />
         </AppLayout >
     );
 }
