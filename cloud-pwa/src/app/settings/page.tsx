@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import AppLayout from '@/components/Layout';
-import DebugPanel from '@/components/DebugPanel';
+import AppLayout from '../layout'; // ZMENA: skúsime načítanie priamo z app layoutu
+import DebugPanel from '../../components/DebugPanel'; // ZMENA: presná cesta k debug panelu
 
 export default function SettingsPage() {
     const [stores, setStores] = useState<any[]>([]);
