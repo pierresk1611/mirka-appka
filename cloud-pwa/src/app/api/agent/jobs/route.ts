@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         });
 
         const mappingMap = new Map();
-        templateConfigs.forEach(tc => {
+        templateConfigs.forEach((tc: any) => {
             if (tc.mappings) mappingMap.set(tc.key, JSON.parse(tc.mappings));
         });
 
@@ -43,13 +43,13 @@ export async function GET(request: Request) {
         });
 
         // Format Jobs
-        const formattedOrderJobs = orders.map(order => ({
+        const formattedOrderJobs = orders.map((order: any) => ({
             type: 'ORDER_BATCH',
             id: order.id,
             woo_id: order.woo_id,
             customer_name: order.customer_name,
             store_name: order.store.name,
-            items: order.items.map(item => ({
+            items: order.items.map((item: any) => ({
                 id: item.id,
                 template_key: item.template_key,
                 ai_data: item.ai_data ? JSON.parse(item.ai_data) : {},
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
             }))
         }));
 
-        const formattedTemplateJobs = templateJobs.map(job => ({
+        const formattedTemplateJobs = templateJobs.map((job: any) => ({
             type: 'TEMPLATE_SCAN',
             id: job.key,
             template_key: job.key
