@@ -37,7 +37,7 @@ export async function POST(
 
         // 3. Fetch AI Key from Settings
         const settings = await prisma.settings.findMany();
-        const aiKey = settings.find(s => s.key === 'OPENAI_API_KEY')?.value;
+        const aiKey = settings.find((s: any) => s.key === 'OPENAI_API_KEY')?.value;
 
         // 4. Sync Items to OrderItem table
         for (const item of order.line_items) {
