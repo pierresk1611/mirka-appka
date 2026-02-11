@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import AppLayout from '../../components/AppLayout';
+import DebugPanel from '@/components/DebugPanel';
 import {
     Search,
     RefreshCw,
