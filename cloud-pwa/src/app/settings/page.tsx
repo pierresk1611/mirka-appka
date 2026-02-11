@@ -38,9 +38,13 @@ export default function SettingsPage() {
                 fetchStores();
             } else {
                 const err = await res.json();
+                console.error("Store add error:", err);
+                alert(`CHYBA: ${err.error || 'Neznáma chyba'}`);
                 (window as any).logToMonitor?.(`CHYBA: ${err.error}`, "error");
             }
         } catch (err: any) {
+            console.error("Store add CRITICAL:", err);
+            alert(`CRITICAL ERROR: ${err.message}`);
             (window as any).logToMonitor?.(`CRITICAL: ${err.message}`, "error");
         } finally { setLoading(false); }
     };
