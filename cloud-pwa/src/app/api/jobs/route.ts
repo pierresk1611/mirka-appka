@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeRequest } from '@/lib/auth';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const jobs = await prisma.job.findMany({
             where: { status: 'PENDING' },
@@ -19,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const body = await request.json();
 

@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { authorizeRequest } from '@/lib/auth';
 
 export async function GET(request: Request, { params }: { params: Promise<{ key: string }> }) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const { key } = await params;
         const config = await prisma.templateConfig.findUnique({
@@ -14,6 +18,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ key: string }> }) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const { key } = await params;
         const body = await request.json();

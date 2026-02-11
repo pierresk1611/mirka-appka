@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Dropbox } from 'dropbox';
+import { authorizeRequest } from '@/lib/auth';
 
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ key: string }> }
 ) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const { key } = await params;
 

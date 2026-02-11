@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+import { authorizeRequest } from '@/lib/auth';
+
 export const dynamic = 'force-dynamic';
 
 // GET: Fetch all settings
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const settings = await prisma.settings.findMany();
         // Convert array to object { key: value }
@@ -17,6 +22,9 @@ export async function GET() {
 
 // POST: Update settings
 export async function POST(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         const body = await request.json(); // Expect { key: "WOO_KEY", value: "..." } or Array
 

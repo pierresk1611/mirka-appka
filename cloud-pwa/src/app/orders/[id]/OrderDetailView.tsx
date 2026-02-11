@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
 import { Loader2, Save, Send, AlertTriangle, Box, Layers, User, Calendar, MapPin, Globe, Database } from 'lucide-react';
 import DebugPanel from '@/components/DebugPanel';
+import { getAuthHeaders } from '@/lib/config';
 
 
 interface OrderItem {
@@ -66,7 +67,7 @@ export default function OrderDetailView() {
         try {
             const res = await fetch('/api/jobs', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     type: 'PHOTOSHOP_OPEN',
                     templateKey: activeItem.template_key,
@@ -94,7 +95,7 @@ export default function OrderDetailView() {
 
     const fetchOrder = async () => {
         try {
-            const res = await fetch(`/api/orders/${id}`);
+            const res = await fetch(`/api/orders/${id}`, { headers: getAuthHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 setOrder(data);
@@ -118,7 +119,7 @@ export default function OrderDetailView() {
                     // Fetch mappings for the template of the first item
                     const templateToFetch = data?.items?.[0]?.template_key;
                     try {
-                        const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`);
+                        const mapRes = await fetch(`/api/templates/${templateToFetch}/mapping`, { headers: getAuthHeaders() });
                         if (mapRes.ok) {
                             const mapData = await mapRes.json();
                             setMappings(mapData?.mappings ? JSON.parse(mapData.mappings) : {});
@@ -147,7 +148,7 @@ export default function OrderDetailView() {
         try {
             // We reuse the sync logic but for a single item
             // For now, let's call a specific endpoint or re-sync the whole order
-            const res = await fetch(`/api/orders/${id}/sync`, { method: 'POST' });
+            const res = await fetch(`/api/orders/${id}/sync`, { method: 'POST', headers: getAuthHeaders() });
             if (res.ok) {
                 await fetchOrder(); // Refresh data
                 alert('AI analýza bola dokončená.');
@@ -163,7 +164,7 @@ export default function OrderDetailView() {
 
     const fetchLogs = async () => {
         try {
-            const res = await fetch('/api/agent/logs');
+            const res = await fetch('/api/agent/logs', { headers: getAuthHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data.logs || []);
@@ -193,14 +194,15 @@ export default function OrderDetailView() {
             // 1. Save locally to DB
             const res = await fetch(`/api/templates/${activeItem.template_key}/mapping`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ mappings })
             });
 
             if (res.ok) {
                 // 2. Sync Manifest to Dropbox (New Feature)
                 const syncRes = await fetch(`/api/templates/${activeItem.template_key}/sync-manifest`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: getAuthHeaders()
                 });
 
                 if (syncRes.ok) {
@@ -225,7 +227,7 @@ export default function OrderDetailView() {
         try {
             const res = await fetch(`/api/orders/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     itemId,
                     ai_data: itemForms[itemId]
@@ -248,7 +250,7 @@ export default function OrderDetailView() {
                 try {
                     const res = await fetch('/api/jobs', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: getAuthHeaders(),
                         body: JSON.stringify({
                             type: 'PHOTOSHOP_PREVIEW',
                             templateKey: item?.template_key,
@@ -721,7 +723,7 @@ export default function OrderDetailView() {
                     {logs.length === 0 && !(!activeItem?.template?.main_file) && <div className="text-slate-600 italic">Čakanie na signál z agenta...</div>}
                 </div>
             </div>
-<DebugPanel title="Objednávka" data={order} error={undefined} loading={false} />
+            <DebugPanel title="Objednávka" data={order} error={undefined} loading={false} />
         </AppLayout>
     );
 }

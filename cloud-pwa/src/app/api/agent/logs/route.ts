@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { authorizeRequest } from '@/lib/auth';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ logs: ['Unauthorized'] }, { status: auth.status });
+
     try {
         // Path to the agent log on the user's system
         const logPath = '/Users/apple/MIRKA AI AGENT DATA/local-agent/agent.log';

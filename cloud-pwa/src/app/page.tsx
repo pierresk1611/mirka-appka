@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DebugPanel from '@/components/DebugPanel';
+import { getAuthHeaders } from '@/lib/config';
 
 export default function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -11,7 +12,9 @@ export default function Dashboard() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/orders?status=PENDING,AI_READY,GENERATING,ERROR');
+
+      // ... inside fetchOrders ...
+      const res = await fetch('/api/orders?status=PENDING,AI_READY,GENERATING,ERROR', { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Chyba pri načítaní');
       const data = await res.json();
       setOrders(data);
@@ -40,20 +43,20 @@ export default function Dashboard() {
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Nové objednávky</p>
-            <p className="text-2xl font-bold text-blue-600">{orders.length}</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Nové objednávky</p>
+          <p className="text-2xl font-bold text-blue-600">{orders.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center border-l-4 border-l-purple-500">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">🤖 AI Pripravené</p>
-            <p className="text-2xl font-bold text-purple-600">{orders.filter(o => o.status === 'AI_READY').length}</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">🤖 AI Pripravené</p>
+          <p className="text-2xl font-bold text-purple-600">{orders.filter(o => o.status === 'AI_READY').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center border-l-4 border-l-orange-500">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">⚙️ V procese</p>
-            <p className="text-2xl font-bold text-orange-500">{orders.filter(o => o.status === 'GENERATING').length}</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">⚙️ V procese</p>
+          <p className="text-2xl font-bold text-orange-500">{orders.filter(o => o.status === 'GENERATING').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center border-l-4 border-l-red-500">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">⚠️ Chyby</p>
-            <p className="text-2xl font-bold text-red-500">{orders.filter(o => o.status === 'ERROR').length}</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">⚠️ Chyby</p>
+          <p className="text-2xl font-bold text-red-500">{orders.filter(o => o.status === 'ERROR').length}</p>
         </div>
       </div>
 
@@ -106,10 +109,9 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md border ${
-                          order.status === 'AI_READY' ? 'bg-purple-600 text-white border-purple-700' : 
+                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md border ${order.status === 'AI_READY' ? 'bg-purple-600 text-white border-purple-700' :
                           order.status === 'ERROR' ? 'bg-red-600 text-white border-red-700' : 'bg-gray-100 text-gray-500'
-                        }`}>
+                          }`}>
                           {order.status === 'AI_READY' ? '🤖 AI OK' : order.status}
                         </span>
                       </td>

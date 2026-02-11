@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { parseOrderText } from '@/lib/ai';
 import { matchTemplate, formatMetadataValue, extractTemplateId, extractQuantityFromMetadata, extractSku, extractFormat } from '@/lib/utils';
+import { authorizeRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow longer timeout for sync
@@ -33,6 +34,9 @@ function extractEPOData(metaData: any[]) {
 }
 
 export async function POST(request: Request) {
+    const auth = await authorizeRequest(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     try {
         // 1. Fetch All Active Stores
         const stores = await prisma.store.findMany();
@@ -62,7 +66,7 @@ export async function POST(request: Request) {
                 let page = 1;
                 let totalPages = 1;
                 const MAX_PAGES = 1000; // Safety limit to prevent infinite loops
-                
+
                 while (page <= totalPages && page <= MAX_PAGES) {
                     try {
                         const response = await WooCommerce.get("orders", {
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
                         });
 
                         const orders = response.data || [];
-                        
+
                         // Get total pages from X-WP-TotalPages header
                         if (page === 1) {
                             // Extract total pages from response headers
