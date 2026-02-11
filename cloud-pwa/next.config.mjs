@@ -6,7 +6,8 @@ const nextConfig = {
         AGENT_SECRET_TOKEN: 'mirka-agent-secure-token-2026',
         WOO_URL: 'https://VAS_ESHO_URL.sk', // Zadajte URL vášho eshopu
         WOO_API_KEY: 'VAS_API_KEY',       // Zadajte kľúč z wp-config.php
-        API_SECRET_TOKEN: process.env.API_SECRET_TOKEN,
+        // API_SECRET_TOKEN is handled by server-side process.env
+        // NEXT_PUBLIC_API_SECRET_TOKEN is handled by client-side inline
         // OPENAI_API_KEY: 'SK-MISSING', 
     },
 };
