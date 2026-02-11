@@ -235,8 +235,7 @@ export default function UserManagement() {
                             </div>
                         </form>
                     </div>
-<DebugPanel title="Objednávky" data={orders} error={error} loading={loading} />
-
+<DebugPanel title="Nastavenia" data={undefined} error={undefined} loading={false} />
                 </div>
             )}
         </AppLayout>
